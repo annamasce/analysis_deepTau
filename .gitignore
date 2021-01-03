@@ -1,2 +1,5 @@
 plots/
 data/
+.DS_store
+*.pdf
+*__pycache__*
