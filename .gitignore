@@ -3,3 +3,4 @@ data/
 .DS_store
 *.pdf
 *__pycache__*
+*.pyc
