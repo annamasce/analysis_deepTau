@@ -8,38 +8,38 @@ import awkward as ak
 def where(condition, if_true, if_false):
     return condition*if_true + (1 - condition)*if_false
 
-def getEvents_fromFile(fileName, treeName_gen, treeName_in):
-    tree_gen = uproot.open(fileName)[treeName_gen] 
-    tree_in = uproot.open(fileName)[treeName_in] 
-    events_gen = ak.Table(tree_gen.arrays(namedecode="utf-8")) # generator events
-    events_in = ak.Table(tree_in.arrays(namedecode="utf-8")) # filtered events
+# def getEvents_fromFile(fileName, treeName_gen, treeName_in):
+#     tree_gen = uproot.open(fileName)[treeName_gen] 
+#     tree_in = uproot.open(fileName)[treeName_in] 
+#     events_gen = ak.Table(tree_gen.arrays(namedecode="utf-8")) # generator events
+#     events_in = ak.Table(tree_in.arrays(namedecode="utf-8")) # filtered events
 
-    return events_gen, events_in
+#     return events_gen, events_in
 
-def getTaus(events, is_gen=False, is_old=False):
-    if is_gen:
-        taus = ak.JaggedArray.zip(gen_e = events.gen_tau_e, gen_pt=events.gen_tau_pt, gen_eta=events.gen_tau_eta, gen_phi=events.gen_tau_phi,
-                                    lepton_gen_match=events.lepton_gen_match)
+# def getTaus(events, is_gen=False, is_old=False):
+#     if is_gen:
+#         taus = ak.JaggedArray.zip(gen_e = events.gen_tau_e, gen_pt=events.gen_tau_pt, gen_eta=events.gen_tau_eta, gen_phi=events.gen_tau_phi,
+#                                     lepton_gen_match=events.lepton_gen_match)
     
-    elif is_old:
-        taus = ak.JaggedArray.zip(e=events.tau_e, pt=events.tau_pt, eta=events.tau_eta, phi=events.tau_phi, 
-                                looseIsoAbs=events.tau_looseIsoAbs, looseIsoRel=events.tau_looseIsoRel,
-                                mediumIsoAbs=events.tau_mediumIsoAbs, mediumIsoRel=events.tau_mediumIsoRel,
-                                tightIsoAbs=events.tau_tightIsoAbs, tightIsoRel=events.tau_tightIsoRel,
-                                gen_e = events.gen_tau_e, gen_pt=events.gen_tau_pt, gen_eta=events.gen_tau_eta, gen_phi=events.gen_tau_phi,
-                                lepton_gen_match=events.lepton_gen_match, deepTau_VSjet=events.deepTau_VSjet)
-    else:
-        taus = ak.JaggedArray.zip(e=events.tau_e, pt=events.tau_pt, eta=events.tau_eta, phi=events.tau_phi, 
-                                looseIsoAbs=events.tau_looseIsoAbs, looseIsoRel=events.tau_looseIsoRel,
-                                mediumIsoAbs=events.tau_mediumIsoAbs, mediumIsoRel=events.tau_mediumIsoRel,
-                                tightIsoAbs=events.tau_tightIsoAbs, tightIsoRel=events.tau_tightIsoRel,
-                                gen_e = events.gen_tau_e, gen_pt=events.gen_tau_pt, gen_eta=events.gen_tau_eta, gen_phi=events.gen_tau_phi,
-                                lepton_gen_match=events.lepton_gen_match, deepTau_VSjet=events.deepTau_VSjet, vz=events.tau_vz)
-    return taus
+#     elif is_old:
+#         taus = ak.JaggedArray.zip(e=events.tau_e, pt=events.tau_pt, eta=events.tau_eta, phi=events.tau_phi, 
+#                                 looseIsoAbs=events.tau_looseIsoAbs, looseIsoRel=events.tau_looseIsoRel,
+#                                 mediumIsoAbs=events.tau_mediumIsoAbs, mediumIsoRel=events.tau_mediumIsoRel,
+#                                 tightIsoAbs=events.tau_tightIsoAbs, tightIsoRel=events.tau_tightIsoRel,
+#                                 gen_e = events.gen_tau_e, gen_pt=events.gen_tau_pt, gen_eta=events.gen_tau_eta, gen_phi=events.gen_tau_phi,
+#                                 lepton_gen_match=events.lepton_gen_match, deepTau_VSjet=events.deepTau_VSjet)
+#     else:
+#         taus = ak.JaggedArray.zip(e=events.tau_e.compact(), pt=events.tau_pt.compact(), eta=events.tau_eta.compact(), phi=events.tau_phi.compact(), 
+#                                 looseIsoAbs=events.tau_looseIsoAbs.compact(), looseIsoRel=events.tau_looseIsoRel.compact(),
+#                                 mediumIsoAbs=events.tau_mediumIsoAbs.compact(), mediumIsoRel=events.tau_mediumIsoRel.compact(),
+#                                 tightIsoAbs=events.tau_tightIsoAbs.compact(), tightIsoRel=events.tau_tightIsoRel.compact(),
+#                                 gen_e = events.gen_tau_e.compact(), gen_pt=events.gen_tau_pt.compact(), gen_eta=events.gen_tau_eta.compact(), gen_phi=events.gen_tau_phi.compact(),
+#                                 lepton_gen_match=events.lepton_gen_match.compact(), deepTau_VSjet=events.deepTau_VSjet.compact(), vz=events.tau_vz.compact())
+#     return taus
 
-def getL1taus(events):
-    L1taus = ak.JaggedArray.zip(e = events.L1tau_e, pt=events.L1tau_pt, eta=events.L1tau_eta, phi=events.L1tau_phi)
-    return L1taus
+# def getL1taus(events):
+#     L1taus = ak.JaggedArray.zip(e = events.L1tau_e, pt=events.L1tau_pt, eta=events.L1tau_eta, phi=events.L1tau_phi)
+#     return L1taus
 
 def ROC_fromTuples(taus, get_predictions=True):
 
@@ -49,9 +49,9 @@ def ROC_fromTuples(taus, get_predictions=True):
     sel_tauorjets = where(gen_match>=5, 1, 0)>0
     pred = pred_all[sel_tauorjets] # deepTau predictions for tau_h and jets
     truth = truth_all[sel_tauorjets] # truth info for tau_h and jets
-    print(truth.flatten().size)
+    # print(truth.flatten().size)
     truth = truth[pred<=10]
-    print(truth.flatten().size)
+    # print(truth.flatten().size)
     pred = pred[pred<=10]
 
     fpr, tpr, thr = roc_curve(truth.flatten(), pred.flatten())
@@ -118,29 +118,3 @@ def cutbased_eff_flattentuples(taus, var_abs, var_rel):
 #     Nev_passed = (num_sel.sum()>=2).sum()
 #     rate = Nev_passed*L1rate/Nev_tot
 #     return rate
-
-def delta_r2(v1, v2):
-    '''Calculates deltaR squared between two particles v1, v2 whose
-    eta and phi methods return arrays
-    '''
-    dphi = (v1.phi - v2.phi + np.pi) % (2 * np.pi) - np.pi
-    deta = v1.eta - v2.eta
-    dr2 = dphi**2 + deta**2
-    return dr2
-
-def delta_r(v1, v2):
-    '''Calculates deltaR between two particles v1, v2 whose
-    eta and phi methods return arrays.
-    
-    Note: Prefer delta_r2 for cuts.
-    '''
-    return np.sqrt(delta_r2(v1, v2))
-
-def delta_z(v1, v2):
-    '''Calculates dz between two particles v1, v2 whose
-    vz methods return arrays.
-    
-    Note: Prefer delta_r2 for cuts.
-    '''
-    dz = v1.vz - v2.vz
-    return dz

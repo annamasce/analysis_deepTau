@@ -1,5 +1,7 @@
 plots/
 data/
+notebooks/test.ipynb
+notebooks/.ipynb_checkpoints
 .DS_store
 *.pdf
 *__pycache__*

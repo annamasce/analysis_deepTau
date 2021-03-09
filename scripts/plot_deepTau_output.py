@@ -10,11 +10,13 @@ import uproot
 import awkward as ak
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from dataset import dataset
 
 plot_name = sys.argv[1]
-plot_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/minPt20/'
-fileName_eff = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/VBFToTauTau_minPt20.root"
-# fileName_rates = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/HLTPhys_1-8_minPt20t.root"
+plot_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/newPlots_CMSSW_11_2_0/'
+fileName_eff = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/VBFHToTauTau.root"
+treeName_gen = "gen_counter"
+treeName_in = "final_counter"
 
 cutbased_vars = {
                  "loose": ["looseIsoAbs", "looseIsoRel"],
@@ -26,17 +28,8 @@ colors = ['green', 'red', 'orange']
 with PdfPages(plot_path + 'deepTau_output_{}.pdf'.format(plot_name)) as pdf:
 
     # get trees from file
-    treeName_gen = "gen_counter"
-    treeName_in = "initial_counter"
-    events_gen, events_in = getEvents_fromFile(fileName_eff, treeName_gen, treeName_in)
-
-    # get L1 taus and reco taus from events
-    taus = getTaus(events_in)
-    L1taus = getL1taus(events_in)
-
-    # apply last modules removed from HLT path (take only taus with L1 match and apply event cut based on dz of jet pairs)
-    L2taus = L1THLTTauMatching(L1taus, taus)
-    L2taus = HLTJetPairDzMatchFilter(L2taus)
+    dataset_VBF = dataset(fileName_eff, treeName_in, treeName_gen)
+    L2taus = dataset_VBF.get_taus(apply_selection=True)
 
     # generate ROC curve for deepTau_VSjet
     fpr, tpr, thr, pred, truth = ROC_fromTuples(L2taus)
@@ -63,13 +56,6 @@ with PdfPages(plot_path + 'deepTau_output_{}.pdf'.format(plot_name)) as pdf:
     plt.legend()
     plt.title("deepTau output for VBF simulation")
     plt.xlabel("deepTau_VSjet")
+    plt.ylabel("counts")
     pdf.savefig()
     plt.close()
-
-    # # deepTau_VSjet distribution in HLTphys sample
-    # events_gen_rates, events_in_rates = getEvents_fromFile(fileName_rates, treeName_gen, treeName_in)
-    # plt.title("deepTau output for HLT physics data")
-    # plt.xlabel("deepTau_VSjet")
-    # plt.hist(events_in_rates['deepTau_VSjet'].flatten(), bins=50, alpha=0.5)
-    # pdf.savefig()
-    # plt.close()
