@@ -1,64 +1,76 @@
-import ROOT
-from ROOT import TTree
-from sklearn.metrics import roc_curve, auc
 import numpy as np
-import uproot
-import awkward as ak
-import sys
+
 
 def delta_r2(v1, v2):
-    '''Calculates deltaR squared between two particles v1, v2 whose
+    """
+    Calculates deltaR squared between two particles v1, v2 whose
     eta and phi methods return arrays
-    '''
+    """
     dphi = (v1.phi - v2.phi + np.pi) % (2 * np.pi) - np.pi
     deta = v1.eta - v2.eta
-    dr2 = dphi**2 + deta**2
+    dr2 = dphi ** 2 + deta ** 2
     return dr2
 
+
 def delta_r(v1, v2):
-    '''Calculates deltaR between two particles v1, v2 whose
+    """
+    Calculates deltaR between two particles v1, v2 whose
     eta and phi methods return arrays.
     
     Note: Prefer delta_r2 for cuts.
-    '''
+    """
     return np.sqrt(delta_r2(v1, v2))
 
+
 def delta_z(v1, v2):
-    '''Calculates dz between two particles v1, v2 whose
+    """
+    Calculates dz between two particles v1, v2 whose
     vz methods return arrays.
-    '''
+    """
     dz = v1.vz - v2.vz
     return dz
 
+
 def true_tau_selection(taus):
-    mask = taus.lepton_gen_match==5
+    mask = taus.lepton_gen_match == 5
     return mask
+
 
 def gen_tau_selection(taus, gen_minPt=20, gen_maxEta=2.1):
-    mask = (taus.gen_pt>gen_minPt) & (taus.gen_eta<gen_maxEta) & (taus.gen_eta> -gen_maxEta)
+    mask = (taus.gen_pt > gen_minPt) & (taus.gen_eta < gen_maxEta) & (taus.gen_eta > -gen_maxEta)
     return mask
 
+
 def reco_tau_selection(taus, minPt=20, eta_sel=True, maxEta=2.1):
-    mask = taus.pt>minPt
+    mask = taus.pt > minPt
     if eta_sel:
-        mask_final = mask & (taus.eta<maxEta) & (taus.eta>-maxEta)
+        mask_final = mask & (taus.eta < maxEta) & (taus.eta > -maxEta)
         return mask_final
     return mask
 
+
 def deepTau_selection(taus, deepTau_thr):
-    true_taus_pred = taus.deepTau_VSjet # deepTau prediction for tau vs jets
+    true_taus_pred = taus.deepTau_VSjet  # deepTau prediction for tau vs jets
     mask = (true_taus_pred >= deepTau_thr)
     return mask
 
+
 def iso_tau_selection(taus, var_abs, var_rel):
-    iso_cut = (taus[var_abs]>0) | (taus[var_rel]>0)
+    iso_cut = (taus[var_abs] > 0) | (taus[var_rel] > 0)
     return iso_cut
 
+
 def ditau_selection(taus_mask):
-    ev_mask = taus_mask.sum()>=2
+    ev_mask = taus_mask.sum() >= 2
     # events_out = events_in[ev_mask]
     # return events_out, ev_mask
     return ev_mask
+
+def L1seed_correction(L1taus, taus):
+    L1taus_mask = (L1taus.pt >= 32)
+    ev_mask = ditau_selection(L1taus_mask)
+    return L1taus[ev_mask].compact(), taus[ev_mask].compact()
+
 
 def L1THLTTauMatching(L1taus, taus):
     dR_matching = 0.5
@@ -70,13 +82,14 @@ def L1THLTTauMatching(L1taus, taus):
     # # print(dR[range(2)])
     # # consider only L1taus for which there is at least 1 matched tau
     # tau_inpair = tau_inpair[dR<dR_matching]
-    mask = (dR<dR_matching).sum()>0
+    mask = (dR < dR_matching).sum() > 0
     # tau_inpair = tau_inpair[mask]
     # # take first matched tau for each L1tau
     # L2taus = tau_inpair[:,:,0]
     # # print(L2taus[range(2)])
     L2taus = taus[mask]
     return L2taus
+
 
 # def L1THLTTauMatching(L1taus, taus):
 #     dR_matching = 0.5
@@ -105,12 +118,9 @@ def HLTJetPairDzMatchFilter(L2taus):
     # print(dr2[range(5)])
     dz = delta_z(L2tau_1, L2tau_2)
     # print(dz[range(5)])
-    pair_mask = (dr2 >= jetMinDR*jetMinDR) & (dz <= jetMaxDZ) & (dz >= -jetMaxDZ)
-    ev_mask = pair_mask.sum()>0 
+    pair_mask = (dr2 >= jetMinDR * jetMinDR) & (dz <= jetMaxDZ) & (dz >= -jetMaxDZ)
+    ev_mask = pair_mask.sum() > 0
     # events = events[ev_mask]
     # return events, L2taus[ev_mask].compact()
     # print(L2taus[ev_mask].compact()[range(5)])
     return L2taus[ev_mask].compact()
-
-
-

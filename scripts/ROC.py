@@ -1,9 +1,4 @@
-import ROOT
-from ROOT import TTree
 from sklearn.metrics import roc_curve, auc
-import numpy as np
-import uproot
-import awkward as ak
 
 def where(condition, if_true, if_false):
     return condition*if_true + (1 - condition)*if_false

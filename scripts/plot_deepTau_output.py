@@ -1,13 +1,7 @@
 import sys
-sys.path.append('../')
-from helpers import *
+from ROC import *
 from selection import *
-import ROOT
-from ROOT import TTree
 from sklearn.metrics import roc_curve, auc
-import numpy as np
-import uproot
-import awkward as ak
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from dataset import dataset

@@ -1,8 +1,5 @@
-import ROOT
-from ROOT import TTree
-import numpy as np
-import uproot
-import awkward as ak
+import uproot3 as uproot
+import awkward0 as ak
 from selection import *
 
 class dataset():
@@ -41,7 +38,10 @@ class dataset():
                                     gen_e = events.gen_tau_e, gen_pt=events.gen_tau_pt, gen_eta=events.gen_tau_eta, gen_phi=events.gen_tau_phi,
                                     lepton_gen_match=events.lepton_gen_match, deepTau_VSjet=events.deepTau_VSjet, vz=events.tau_vz)
             if apply_selection:
-                L1taus = ak.JaggedArray.zip(e = events.L1tau_e, pt=events.L1tau_pt, eta=events.L1tau_eta, phi=events.L1tau_phi)
+                L1taus = ak.JaggedArray.zip(e=events.L1tau_e, pt=events.L1tau_pt, eta=events.L1tau_eta, phi=events.L1tau_phi)
+                # apply L1seed correction in case Pt28 and Pt30 seeds are considered
+                L1taus, taus = L1seed_correction(L1taus, taus)
+                # match taus with L1 taus
                 taus = L1THLTTauMatching(L1taus, taus)
                 taus = HLTJetPairDzMatchFilter(taus)
         

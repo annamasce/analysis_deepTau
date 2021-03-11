@@ -1,4 +1,3 @@
-import numpy as np
 from eff_rate import *
 from dataset import dataset
 import json
@@ -6,7 +5,6 @@ import ROOT
 from ROOT import *
 from array import array
 from selection import *
-# import rootpy
 
 def set_eff2Dhist_style(hist, Pt_thr, Pt_max, cut_based = False):
     if cut_based:

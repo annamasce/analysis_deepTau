@@ -1,12 +1,9 @@
-import numpy as np
 from eff_rate import *
 from dataset import dataset
 import json
 import ROOT
 from ROOT import *
-from array import array
 from selection import *
-# import rootpy
 ROOT.gROOT.SetBatch(True)
 
 data_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/'

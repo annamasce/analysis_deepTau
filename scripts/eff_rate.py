@@ -1,12 +1,3 @@
-import sys
-import ROOT
-from ROOT import TTree
-from sklearn.metrics import roc_curve, auc
-import numpy as np
-import uproot
-import awkward as ak
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from selection import *
 from statsmodels.stats.proportion import proportion_confint
 

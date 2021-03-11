@@ -6,3 +6,4 @@ notebooks/.ipynb_checkpoints
 *.pdf
 *__pycache__*
 *.pyc
+.idea/

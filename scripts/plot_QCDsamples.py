@@ -1,19 +1,10 @@
 import sys
 from helpers import *
-import ROOT
-from ROOT import TTree
-from sklearn.metrics import roc_curve, auc
-import numpy as np
-import uproot
-import awkward as ak
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from selection import *
 from eff_rate import *
 from dataset import dataset
 import json
-import coffea
-from coffea import hist
 
 plot_name = sys.argv[1]
 plot_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/minPt20_pre10/'

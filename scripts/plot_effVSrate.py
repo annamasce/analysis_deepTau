@@ -1,13 +1,5 @@
-import sys
-import ROOT
-from ROOT import TTree
-from sklearn.metrics import roc_curve, auc
-import numpy as np
-import uproot
-import awkward as ak
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from selection import *
 from eff_rate import *
 from dataset import dataset
 import json
@@ -19,8 +11,8 @@ parser.add_argument("--qcd", help="work on qcd input for rates", action="store_t
 args = parser.parse_args()
 
 plot_name = args.plotName
-plot_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/newPlots_CMSSW_11_2_0/'
-data_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/'
+plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/newPlots_CMSSW_11_2_0/"
+data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/"
 fileName_eff = "VBFHToTauTau.root"
 fileName_rates = "EphemeralHLTPhysics_1to8.root"
 QCD_fileJson = "QCD_samples.json"
@@ -111,7 +103,6 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
         plt.xlabel("Efficiency")
         plt.ylabel("Rate [Hz]")
         plt.ylim(0., 200.)
-        plt.xlim(-0.01, 0.3)
         plt.errorbar(eff_list, rates, yerr=yerr, xerr=xerr, fmt='.--',  label="deepTau discriminator")
         plt.axvline(eff_initial, linestyle="--", linewidth=0.7, color="purple", label="eff before deepTau producer")
         plt.axvline(eff_limit, linestyle="--", linewidth=0.7, color="brown", label="eff after selection")
@@ -127,12 +118,12 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
                     rate_isocut = rate_isocut + rate_i
             else:
                 rate_isocut, rate_isocut_err_low, rate_isocut_err_up = compute_isocut_rate(taus_rates, Nev_den, value[0], value[1], Pt_thr=Pt_thr)
-            print(key, eff_isocut, eff_isocut_err_low, eff_isocut_err_up)
-            print(key, rate_isocut, rate_isocut_err_low, rate_isocut_err_up)
-            yerr_isocut = np.zeros((2,1))
+            print("efficiency", key, eff_isocut, eff_isocut_err_low, eff_isocut_err_up)
+            print("rate", key, rate_isocut, rate_isocut_err_low, rate_isocut_err_up)
+            yerr_isocut = np.zeros((2, 1))
             yerr_isocut[0] = rate_isocut_err_low
             yerr_isocut[1] = rate_isocut_err_up
-            xerr_isocut = np.zeros((2,1))
+            xerr_isocut = np.zeros((2, 1))
             xerr_isocut[0] = eff_isocut_err_low
             xerr_isocut[1] = eff_isocut_err_up
             plt.errorbar(eff_isocut, rate_isocut, yerr=yerr_isocut, xerr=xerr_isocut, color=colors[j], marker='.', label="{} cut id".format(key))
