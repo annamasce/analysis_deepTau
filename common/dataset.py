@@ -1,6 +1,6 @@
 import uproot3 as uproot
 import awkward0 as ak
-from selection import *
+from common.selection import *
 
 class dataset():
 
@@ -8,7 +8,7 @@ class dataset():
         self.fileName = fileName
         self.treeName = treeName
         self.treeName_gen = treeName_gen
-        self.is_old  = is_old
+        self.is_old = is_old
         self.is_MC = is_MC
 
     def get_events(self):

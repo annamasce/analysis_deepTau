@@ -1,14 +1,14 @@
 import sys
-from ROC import *
-from selection import *
-from sklearn.metrics import roc_curve, auc
+from common.ROC import *
+from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from dataset import dataset
+from common.dataset import dataset
+
 
 plot_name = sys.argv[1]
-plot_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/newPlots_CMSSW_11_2_0/'
-fileName_eff = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/VBFHToTauTau.root"
+plot_path = '/plots/newPlots_CMSSW_11_2_0/'
+fileName_eff = "/data/newSamples_CMSSW_11_2_0/VBFHToTauTau.root"
 treeName_gen = "gen_counter"
 treeName_in = "final_counter"
 

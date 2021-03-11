@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from eff_rate import *
-from dataset import dataset
+from common.eff_rate import *
+from common.dataset import dataset
 import json
 import argparse
 

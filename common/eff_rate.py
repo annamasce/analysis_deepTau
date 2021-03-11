@@ -1,4 +1,4 @@
-from selection import *
+from common.selection import *
 from statsmodels.stats.proportion import proportion_confint
 
 lumi = 122.792/7319 # Recorded luminsoity divided by delta_t for run 325022 LS=[64,377]

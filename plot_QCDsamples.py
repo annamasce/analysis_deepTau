@@ -2,13 +2,12 @@ import sys
 from helpers import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from eff_rate import *
-from dataset import dataset
+from common.dataset import dataset
 import json
 
 plot_name = sys.argv[1]
-plot_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/minPt20_pre10/'
-data_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/'
+plot_path = '/plots/minPt20_pre10/'
+data_path = '/data/'
 QCD_fileJson = "QCD_samples.json"
 
 isocut_vars = {

@@ -1,12 +1,12 @@
-from eff_rate import *
-from dataset import dataset
+from common.eff_rate import *
+from common.dataset import dataset
 import json
 import ROOT
 from ROOT import *
-from selection import *
+from common.selection import *
 ROOT.gROOT.SetBatch(True)
 
-data_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/'
+data_path = '/data/'
 fileName = "VBFToTauTau_minPt20_pre10setup.root"
 QCD_fileJson = "QCD_samples.json"
 

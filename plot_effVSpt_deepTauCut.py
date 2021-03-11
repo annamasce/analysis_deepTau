@@ -1,10 +1,10 @@
-from eff_rate import *
-from dataset import dataset
+from common.eff_rate import *
+from common.dataset import dataset
 import json
 import ROOT
 from ROOT import *
 from array import array
-from selection import *
+from common.selection import *
 
 def set_eff2Dhist_style(hist, Pt_thr, Pt_max, cut_based = False):
     if cut_based:
@@ -31,8 +31,8 @@ if __name__ == '__main__':
     ROOT.TH1.SetDefaultSumw2()
 
     plot_name = sys.argv[1]
-    plot_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/minPt20_pre10/'
-    data_path = '/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/'
+    plot_path = '/plots/minPt20_pre10/'
+    data_path = '/data/'
     fileName = "VBFToTauTau_minPt20_pre10setup.root"
     QCD_fileJson = "QCD_samples.json"
 
