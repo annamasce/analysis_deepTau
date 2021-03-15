@@ -1,4 +1,5 @@
 import numpy as np
+import awkward as ak
 
 
 def delta_r2(v1, v2):
@@ -61,7 +62,7 @@ def iso_tau_selection(taus, var_abs, var_rel):
 
 
 def ditau_selection(taus_mask):
-    ev_mask = taus_mask.sum() >= 2
+    ev_mask = ak.sum(taus_mask, axis=1) >= 2
     # events_out = events_in[ev_mask]
     # return events_out, ev_mask
     return ev_mask
@@ -69,20 +70,18 @@ def ditau_selection(taus_mask):
 def L1seed_correction(L1taus, taus):
     L1taus_mask = (L1taus.pt >= 32)
     ev_mask = ditau_selection(L1taus_mask)
-    return L1taus[ev_mask].compact(), taus[ev_mask].compact()
+    return L1taus[ev_mask], taus[ev_mask]
 
 
 def L1THLTTauMatching(L1taus, taus):
     dR_matching = 0.5
-    # # take all possible pairs of L1taus and taus
-    # L1_inpair, tau_inpair = L1taus.cross(taus, nested=True).unzip()
-    tau_inpair, L1_inpair = taus.cross(L1taus, nested=True).unzip()
+    tau_inpair, L1_inpair = ak.unzip(ak.cartesian([taus, L1taus], nested=True))
     # dR = delta_r(L1_inpair, tau_inpair)
     dR = delta_r(tau_inpair, L1_inpair)
     # # print(dR[range(2)])
     # # consider only L1taus for which there is at least 1 matched tau
     # tau_inpair = tau_inpair[dR<dR_matching]
-    mask = (dR < dR_matching).sum() > 0
+    mask = ak.sum(dR < dR_matching, axis=-1) > 0
     # tau_inpair = tau_inpair[mask]
     # # take first matched tau for each L1tau
     # L2taus = tau_inpair[:,:,0]
@@ -113,14 +112,14 @@ def HLTJetPairDzMatchFilter(L2taus):
     jetMaxDZ = 0.2
     L2taus = L2taus[reco_tau_selection(L2taus, minPt=jetMinPt, maxEta=jetMaxEta)]
     # Take all possible pairs of L2 taus
-    L2tau_1, L2tau_2 = L2taus.distincts().unzip()
+    L2tau_1, L2tau_2 = ak.unzip(ak.combinations(L2taus, 2, axis=1))
     dr2 = delta_r2(L2tau_1, L2tau_2)
     # print(dr2[range(5)])
     dz = delta_z(L2tau_1, L2tau_2)
     # print(dz[range(5)])
     pair_mask = (dr2 >= jetMinDR * jetMinDR) & (dz <= jetMaxDZ) & (dz >= -jetMaxDZ)
-    ev_mask = pair_mask.sum() > 0
+    ev_mask = ak.sum(pair_mask, axis=1) > 0
     # events = events[ev_mask]
     # return events, L2taus[ev_mask].compact()
     # print(L2taus[ev_mask].compact()[range(5)])
-    return L2taus[ev_mask].compact()
+    return L2taus[ev_mask]
