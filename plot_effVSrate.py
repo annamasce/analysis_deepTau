@@ -16,6 +16,8 @@ data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSa
 fileName_eff = "VBFHToTauTau.root"
 fileName_rates = "EphemeralHLTPhysics_1to8.root"
 QCD_fileJson = "QCD_samples.json"
+treeName_gen = "gen_counter"
+treeName_in = "final_counter"
 
 Pt_thr_list = [20, 25, 30, 35, 40, 45]
 # Pt_thr_list = [20]
@@ -28,8 +30,7 @@ isocut_vars = {
 colors = ["green", "red", "orange"]
 
 # get VBF sample
-treeName_gen = "gen_counter"
-treeName_in = "final_counter"
+print("Loading sample for efficiency")
 dataset_eff = dataset(data_path + fileName_eff, treeName_in, treeName_gen)
 taus = dataset_eff.get_taus()
 gen_taus = dataset_eff.get_gen_taus()
@@ -38,9 +39,9 @@ gen_taus = dataset_eff.get_gen_taus()
 original_taus = dataset_eff.get_taus(apply_selection=False)
 
 # get sample for rate computation
+print("Loading sample for rate")
 if args.qcd:
-    # get QCD sample 
-    print("Getting QCD samples")
+    # get QCD sample
     QCD_taus_list = []
     QCD_xs_list = []
     QCD_den_list = []
@@ -56,6 +57,7 @@ else:
     # get HLT physics sample
     dataset_rates = dataset(data_path + fileName_rates, treeName_in, treeName_gen)
     taus_rates = dataset_rates.get_taus()
+    Nev_den = len(dataset_rates.get_gen_events())
 
 with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
 
@@ -80,12 +82,13 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
             for i, QCD_taus in enumerate(QCD_taus_list):
                 rates_i, err_i_low, err_i_up = compute_deepTau_rate_list(QCD_taus, QCD_den_list[i], thr_list, Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
                 # print(rates_i)
-                rates = np.add(rates, rates_i)
-                rates_err_low.add(rates_err_low, err_i_low)
-                rates_err_up.add(rates_err_up, err_i_up)
+                rates = np.add(rates, np.square(rates_i))
+                rates_err_low.add(rates_err_low, np.square(err_i_low))
+                rates_err_up.add(rates_err_up, np.square(err_i_up))
+            rates_err_low = np.sqrt(rates_err_low)
+            rates_err_up = np.sqrt(rates_err_up)
             # print(rates)
         else:
-            Nev_den = len(dataset_rates.get_gen_events())
             rates, rates_err_low, rates_err_up = compute_deepTau_rate_list(taus_rates, Nev_den, thr_list, Pt_thr=Pt_thr)
         yerr = np.zeros((2, len(thr_list)))
         yerr[0] = rates_err_low
