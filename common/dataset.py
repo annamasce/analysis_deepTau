@@ -31,9 +31,19 @@ class dataset:
                      "lepton_gen_match": events.lepton_gen_match, "deepTau_VSjet": events.deepTau_VSjet}
         if self.is_old:
             taus = ak.zip(taus_dict)
+            ##########################################################
+            index = ak.argsort(taus.pt)
+            taus = taus[index]
+            ##########################################################
+            tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
         else:
             taus_dict["vz"] = events.tau_vz
             taus = ak.zip(taus_dict)
+            ##########################################################
+            index = ak.argsort(taus.pt)
+            taus = taus[index]
+            ##########################################################
+            tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
             if apply_selection:
                 L1taus = ak.zip({"e": events.L1tau_e, "pt": events.L1tau_pt, "eta": events.L1tau_eta,
                                  "phi": events.L1tau_phi})
@@ -41,12 +51,14 @@ class dataset:
                 L1taus, taus = L1seed_correction(L1taus, taus)
                 # match taus with L1 taus
                 taus = L1THLTTauMatching(L1taus, taus)
-                taus = HLTJetPairDzMatchFilter(taus)
-        return taus
+                tau_1, tau_2 = HLTJetPairDzMatchFilter(taus)
+        # Return all possible pairs of tau which pass preselection
+        return tau_1, tau_2
 
     def get_gen_taus(self):
         events = self.get_gen_events()
         gen_taus = ak.zip({"gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
                                       "gen_phi": events.gen_tau_phi,
-                                      "lepton_gen_match":events.lepton_gen_match})
-        return gen_taus
+                                      "lepton_gen_match": events.lepton_gen_match})
+        gen_tau_1, gen_tau_2 = ak.unzip(ak.combinations(gen_taus, 2, axis=1))
+        return gen_tau_1, gen_tau_2

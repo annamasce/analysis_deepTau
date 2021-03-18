@@ -68,7 +68,7 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
 
         print("Pt threshold:", Pt_thr)
         print("Computing efficiencies")
-        eff_list, eff_err_low, eff_err_up = compute_deepTau_eff_list(taus, gen_taus, thr_list, Pt_thr=Pt_thr)
+        eff_list, eff_err_low, eff_err_up = compute_deepTau_eff_list(taus[0], taus[1], gen_taus[0], gen_taus[1], thr_list, Pt_thr=Pt_thr)
         xerr = np.zeros((2, len(thr_list)))
         xerr[0] = eff_err_low
         xerr[1] = eff_err_up
@@ -80,7 +80,7 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
             rates_err_low = np.zeros(len(thr_list))
             rates_err_up = np.zeros(len(thr_list))
             for i, QCD_taus in enumerate(QCD_taus_list):
-                rates_i, err_i_low, err_i_up = compute_deepTau_rate_list(QCD_taus, QCD_den_list[i], thr_list, Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
+                rates_i, err_i_low, err_i_up = compute_deepTau_rate_list(QCD_taus[0], QCD_taus[1], QCD_den_list[i], thr_list, Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
                 # print(rates_i)
                 rates = np.add(rates, np.square(rates_i))
                 rates_err_low.add(rates_err_low, np.square(err_i_low))
@@ -89,16 +89,16 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
             rates_err_up = np.sqrt(rates_err_up)
             # print(rates)
         else:
-            rates, rates_err_low, rates_err_up = compute_deepTau_rate_list(taus_rates, Nev_den, thr_list, Pt_thr=Pt_thr)
+            rates, rates_err_low, rates_err_up = compute_deepTau_rate_list(taus_rates[0], taus_rates[1], Nev_den, thr_list, Pt_thr=Pt_thr)
         yerr = np.zeros((2, len(thr_list)))
         yerr[0] = rates_err_low
         yerr[1] = rates_err_up
 
         # Compute efficiency before selection
-        eff_initial = compute_base_eff(original_taus, gen_taus, Pt_thr=Pt_thr)
+        eff_initial = compute_base_eff(original_taus[0], original_taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
         print("Efficiency before deeptau:", eff_initial)
         # Compute efficiency after L1 matching and dz cut
-        eff_limit = compute_base_eff(taus, gen_taus, Pt_thr=Pt_thr)
+        eff_limit = compute_base_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
         print("Efficiency after L1 matching and dz cut:", eff_limit)
         
         # plot eff vs rate
@@ -112,15 +112,15 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
         
         j=0
         for key, value in isocut_vars.items():
-            eff_isocut, eff_isocut_err_low, eff_isocut_err_up = compute_isocut_eff(taus, gen_taus, value[0], value[1], Pt_thr=Pt_thr)
+            eff_isocut, eff_isocut_err_low, eff_isocut_err_up = compute_isocut_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], value[0], value[1], Pt_thr=Pt_thr)
             if args.qcd:
                 rate_isocut = 0
                 for i, QCD_taus in enumerate(QCD_taus_list):
-                    rate_i = compute_isocut_rate(QCD_taus, QCD_den_list[i], value[0], value[1], Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
+                    rate_i = compute_isocut_rate(QCD_taus[0], QCD_taus[1], QCD_den_list[i], value[0], value[1], Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
                     # print(rate_i)
                     rate_isocut = rate_isocut + rate_i
             else:
-                rate_isocut, rate_isocut_err_low, rate_isocut_err_up = compute_isocut_rate(taus_rates, Nev_den, value[0], value[1], Pt_thr=Pt_thr)
+                rate_isocut, rate_isocut_err_low, rate_isocut_err_up = compute_isocut_rate(taus_rates[0], taus_rates[1], Nev_den, value[0], value[1], Pt_thr=Pt_thr)
             print("efficiency", key, eff_isocut, eff_isocut_err_low, eff_isocut_err_up)
             print("rate", key, rate_isocut, rate_isocut_err_low, rate_isocut_err_up)
             yerr_isocut = np.zeros((2, 1))
