@@ -6,7 +6,7 @@ from scipy import optimize
 import argparse
 from common.selection import *
 from common.eff_rate import *
-from common.dataset import dataset
+from common.dataset import Dataset
 
 
 def set_eff2Dhist_style(hist, Pt_thr, Pt_max, cut_based = False):
@@ -54,13 +54,13 @@ if __name__ == '__main__':
 
     # get sample for efficiency
     print("Loading sample for efficiency")
-    dataset_eff = dataset(data_path + fileName_eff, treeName_in, treeName_gen)
+    dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
     taus = dataset_eff.get_taus()
     gen_taus = dataset_eff.get_gen_taus()
 
     # get sample for rates
     print("Loading sample for rate")
-    dataset_rates = dataset(data_path + fileName_rates, treeName_in, treeName_gen)
+    dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
     taus_rates = dataset_rates.get_taus()
     Nev_den = len(dataset_rates.get_gen_events())
 

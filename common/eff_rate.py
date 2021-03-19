@@ -119,7 +119,7 @@ def compute_deepTau_rate(tau_1, tau_2, Nev_den, deepTau_thr, Pt_thr=20, L1rate=7
     """
 
     num_tau_mask_1 = reco_tau_selection(tau_1, minPt=Pt_thr)
-    num_tau_mask_2= reco_tau_selection(tau_2, minPt=Pt_thr)
+    num_tau_mask_2 = reco_tau_selection(tau_2, minPt=Pt_thr)
 
     num_tau_mask_final_1 = deepTau_selection(tau_1, deepTau_thr) & num_tau_mask_1
     num_tau_mask_final_2 = deepTau_selection(tau_2, deepTau_thr) & num_tau_mask_2

@@ -1,7 +1,7 @@
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from common.dataset import dataset
+from common.dataset import Dataset
 import json
 
 plot_name = sys.argv[1]
@@ -28,7 +28,7 @@ QCD_den_list = []
 with open(QCD_fileJson, "r") as json_file:
     samples = json.load(json_file)
     for key, value in samples.items():
-        data = dataset(data_path + value[0], treeName_in, treeName_gen)
+        data = Dataset(data_path + value[0], treeName_in, treeName_gen)
         QCD_taus_list.append(data.get_taus())
         QCD_xs_list.append(value[1])
         QCD_den_list.append(len(data.get_gen_events())) 

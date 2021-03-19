@@ -2,7 +2,16 @@ import uproot
 import awkward as ak
 from common.selection import *
 
-class dataset:
+import collections
+import six
+
+def iterable(arg):
+    return (
+        isinstance(arg, collections.abc.Iterable)
+        and not isinstance(arg, six.string_types)
+    )
+
+class Dataset:
     def __init__(self, fileName, treeName, treeName_gen, is_MC=True, is_old=False):
         self.fileName = fileName
         self.treeName = treeName
@@ -10,14 +19,32 @@ class dataset:
         self.is_old = is_old
         self.is_MC = is_MC
 
+    def __define_tree_expression(self, is_gen):
+        if is_gen:
+            treeName = self.treeName_gen
+        else:
+            treeName = self.treeName
+        if iterable(self.fileName):
+            tree_path = []
+            for file in self.fileName:
+                tree_path.append(file + ":" + treeName)
+        else:
+            tree_path = self.fileName + ":" + treeName
+        return tree_path
+
+
     def get_events(self):
-        tree_in = uproot.open(self.fileName)[self.treeName]
-        events = tree_in.arrays()  # filtered events
+        # tree_in = uproot.open(self.fileName)[self.treeName]
+        # events = tree_in.arrays()  # filtered events
+        tree_path = self.__define_tree_expression(is_gen=False)
+        events = uproot.lazy(tree_path)
         return events
 
     def get_gen_events(self):
-        tree_gen = uproot.open(self.fileName)[self.treeName_gen]
-        events = tree_gen.arrays()  # generator events
+        # tree_gen = uproot.open(self.fileName)[self.treeName_gen]
+        # events = tree_gen.arrays()  # generator events
+        tree_path = self.__define_tree_expression(is_gen=True)
+        events = uproot.lazy(tree_path)
         return events
 
     def get_taus(self, apply_selection=True):
@@ -31,18 +58,14 @@ class dataset:
                      "lepton_gen_match": events.lepton_gen_match, "deepTau_VSjet": events.deepTau_VSjet}
         if self.is_old:
             taus = ak.zip(taus_dict)
-            ##########################################################
-            index = ak.argsort(taus.pt)
+            index = ak.argsort(taus.pt, ascending=False)
             taus = taus[index]
-            ##########################################################
             tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
         else:
             taus_dict["vz"] = events.tau_vz
             taus = ak.zip(taus_dict)
-            ##########################################################
-            index = ak.argsort(taus.pt)
+            index = ak.argsort(taus.pt, ascending=False)
             taus = taus[index]
-            ##########################################################
             tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
             if apply_selection:
                 L1taus = ak.zip({"e": events.L1tau_e, "pt": events.L1tau_pt, "eta": events.L1tau_eta,

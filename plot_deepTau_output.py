@@ -3,7 +3,7 @@ from common.ROC import *
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from common.dataset import dataset
+from common.dataset import Dataset
 
 
 plot_name = sys.argv[1]
@@ -22,7 +22,7 @@ colors = ['green', 'red', 'orange']
 with PdfPages(plot_path + 'deepTau_output_{}.pdf'.format(plot_name)) as pdf:
 
     # get trees from file
-    dataset_VBF = dataset(fileName_eff, treeName_in, treeName_gen)
+    dataset_VBF = Dataset(fileName_eff, treeName_in, treeName_gen)
     L2taus = dataset_VBF.get_taus(apply_selection=True)
 
     # generate ROC curve for deepTau_VSjet

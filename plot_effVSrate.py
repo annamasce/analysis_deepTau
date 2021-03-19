@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from common.eff_rate import *
-from common.dataset import dataset
+from common.dataset import Dataset
 import json
 import argparse
 
@@ -31,7 +31,7 @@ colors = ["green", "red", "orange"]
 
 # get VBF sample
 print("Loading sample for efficiency")
-dataset_eff = dataset(data_path + fileName_eff, treeName_in, treeName_gen)
+dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
 taus = dataset_eff.get_taus()
 gen_taus = dataset_eff.get_gen_taus()
 
@@ -48,14 +48,14 @@ if args.qcd:
     with open(QCD_fileJson, "r") as json_file:
         samples = json.load(json_file)
         for key, value in samples.items():
-            data = dataset(data_path + value[0], treeName_in, treeName_gen)
+            data = Dataset(data_path + value[0], treeName_in, treeName_gen)
             QCD_taus_list.append(data.get_taus())
             QCD_xs_list.append(value[1])
             QCD_den_list.append(len(data.get_gen_events())) 
     print(QCD_xs_list)
 else:
     # get HLT physics sample
-    dataset_rates = dataset(data_path + fileName_rates, treeName_in, treeName_gen)
+    dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
     taus_rates = dataset_rates.get_taus()
     Nev_den = len(dataset_rates.get_gen_events())
 

@@ -1,5 +1,5 @@
 from common.eff_rate import *
-from common.dataset import dataset
+from common.dataset import Dataset
 import json
 import ROOT
 from ROOT import *
@@ -15,7 +15,7 @@ Pt_thr_list = [20, 25, 30, 35, 40, 45]
 # get VBF sample
 treeName_gen = "gen_counter"
 treeName_in = "initial_counter"
-dataset_eff = dataset(data_path + fileName, treeName_in, treeName_gen)
+dataset_eff = Dataset(data_path + fileName, treeName_in, treeName_gen)
 taus = dataset_eff.get_taus()
 gen_taus = dataset_eff.get_gen_taus()
 
@@ -27,7 +27,7 @@ QCD_den_list = []
 with open(QCD_fileJson, "r") as json_file:
     samples = json.load(json_file)
     for key, value in samples.items():
-        data = dataset(data_path + value[0], treeName_in, treeName_gen)
+        data = Dataset(data_path + value[0], treeName_in, treeName_gen)
         QCD_taus_list.append(data.get_taus())
         QCD_xs_list.append(value[1])
         QCD_den_list.append(len(data.get_gen_events()))
