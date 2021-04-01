@@ -37,7 +37,7 @@ if __name__ == '__main__':
     tau_leading, tau_subleading = get_leading_pair(taus)
 
     n_bins = 100
-    eff_mean = 300
+    eff_mean = 400
     pt_min = 20
     pt_bins = [20]
 
@@ -50,7 +50,9 @@ if __name__ == '__main__':
 
         solution = optimize.root_scalar(f, bracket=[pt_min, 2000], method='bisect')
         pt_max = solution.root
+        print(eff_presel_inbin(pt_min, pt_max))
         pt_bins.append(pt_max)
         pt_min = pt_max
 
-    print(pt_bins)
+    print(eff_presel_inbin(pt_min, 2000))
+    print([int(pt) for pt in pt_bins])
