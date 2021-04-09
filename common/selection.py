@@ -33,32 +33,32 @@ def delta_z(v1, v2):
 
 
 def true_tau_selection(taus):
-    mask = taus.lepton_gen_match == 5
-    return mask
+    tau_mask = taus.lepton_gen_match == 5
+    return tau_mask
 
 
 def gen_tau_selection(taus, gen_minPt=20, gen_maxEta=2.1):
-    mask = (taus.gen_pt > gen_minPt) & (abs(taus.gen_eta) < gen_maxEta)
-    return mask
+    tau_mask = (taus.gen_pt > gen_minPt) & (abs(taus.gen_eta) < gen_maxEta)
+    return tau_mask
 
 
 def reco_tau_selection(taus, minPt=20, eta_sel=True, maxEta=2.1):
-    mask = taus.pt > minPt
+    tau_mask = taus.pt > minPt
     if eta_sel:
-        mask_final = mask & (abs(taus.eta) < maxEta)
-        return mask_final
-    return mask
+        tau_mask_final = tau_mask & (abs(taus.eta) < maxEta)
+        return tau_mask_final
+    return tau_mask
 
 
 def deepTau_selection(taus, deepTau_thr):
     true_taus_pred = taus.deepTau_VSjet  # deepTau prediction for tau vs jets
-    mask = (true_taus_pred >= deepTau_thr)
-    return mask
+    tau_mask = (true_taus_pred >= deepTau_thr)
+    return tau_mask
 
 
 def iso_tau_selection(taus, var_abs, var_rel):
-    iso_cut = (taus[var_abs] > 0) | (taus[var_rel] > 0)
-    return iso_cut
+    tau_mask = (taus[var_abs] > 0) | (taus[var_rel] > 0)
+    return tau_mask
 
 
 def ditau_selection(mask_tau_1, mask_tau_2):
@@ -69,8 +69,8 @@ def ditau_selection(mask_tau_1, mask_tau_2):
 def L1seed_correction(L1taus, taus):
     L1taus_mask = (L1taus.pt >= 32)
     ev_mask = ak.sum(L1taus_mask, axis=1) >= 2
-    return L1taus[ev_mask], taus[ev_mask]
-
+    return (L1taus[L1taus_mask])[ev_mask], taus[ev_mask]
+    # return L1taus[ev_mask], taus[ev_mask]
 
 def L1THLTTauMatching(L1taus, taus):
     dR_matching = 0.5
