@@ -1,77 +1,43 @@
+import math
+from scipy import optimize
 from common.eff_rate import *
-from common.dataset import dataset
-import json
-import ROOT
-from ROOT import *
-from common.selection import *
-ROOT.gROOT.SetBatch(True)
+from common.dataset import Dataset
 
-data_path = '/data/'
-fileName = "VBFToTauTau_minPt20_pre10setup.root"
-QCD_fileJson = "QCD_samples.json"
+data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/"
+fileName_eff = "VBFHToTauTau.root"
+fileName_rates = "EphemeralHLTPhysics_1to8.root"
 
 Pt_thr_list = [20, 25, 30, 35, 40, 45]
 
 # get VBF sample
 treeName_gen = "gen_counter"
-treeName_in = "initial_counter"
-dataset_eff = dataset(data_path + fileName, treeName_in, treeName_gen)
+treeName_in = "final_counter"
+dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
 taus = dataset_eff.get_taus()
 gen_taus = dataset_eff.get_gen_taus()
 
-# get QCD sample
-print("Getting QCD samples")
-QCD_taus_list = []
-QCD_xs_list = []
-QCD_den_list = []
-with open(QCD_fileJson, "r") as json_file:
-    samples = json.load(json_file)
-    for key, value in samples.items():
-        data = dataset(data_path + value[0], treeName_in, treeName_gen)
-        QCD_taus_list.append(data.get_taus())
-        QCD_xs_list.append(value[1])
-        QCD_den_list.append(len(data.get_gen_events()))
-# print(QCD_xs_list)
-
-thr_list = np.flip(np.linspace(0.0, 1.0, num=101))
-eff_atThreshold = []
-
-# with PdfPages(plot_path + 'eff_vs_pt_{}.pdf'.format(plot_name)) as pdf:
+# get HLT physics sample
+dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
+taus_rates = dataset_rates.get_taus()
+Nev_den = len(dataset_rates.get_gen_events())
 
 for n, Pt_thr in enumerate(Pt_thr_list):
     print("\nComputing rate improvement at {} GeV".format(Pt_thr))
+    eff_base, _, _ = compute_isocut_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], "mediumIsoAbs", "mediumIsoRel", Pt_thr=Pt_thr)
 
-    # Compute cut-based medium efficiency and rate
-    eff_base, _, _ = compute_isocut_eff(taus, gen_taus, "mediumIsoAbs", "mediumIsoRel", Pt_thr=Pt_thr)
-    rate_base = 0
-    for i, QCD_taus in enumerate(QCD_taus_list):
-        rate_i, _, _ = compute_isocut_rate(QCD_taus, QCD_den_list[i], "mediumIsoAbs", "mediumIsoRel", Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
-        # print(rate_i)
-        rate_base = rate_base + rate_i
-    
-    # Find deepTau threshold such that efficiency is closest to cut-based efficiency
-    eff_list = []
-    pos = -1
-    for i, thr in enumerate(thr_list):
-        eff, _, _ = compute_deepTau_eff(taus, gen_taus, thr, Pt_thr=Pt_thr)
-        eff_list.append(eff)
-        if eff > eff_base:
-            pos = i
-            print(eff_list[pos])
-            print(eff_list[i-1])
-            print(eff_base)
-            break
-    if pos == -1:
-        print("All efficiency below threshold")
-        sys.exit(1)
+    def f(thr):
+        eff, _, _ = compute_deepTau_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], thr, Pt_thr=Pt_thr)
+        return eff - eff_base
 
-    rate = 0
-    for j, QCD_taus in enumerate(QCD_taus_list):
-        rate_j, _, _ = compute_deepTau_rate(
-            QCD_taus, QCD_den_list[j], thr_list[pos], Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[j])
-        rate = rate + rate_j
-    print(rate)
-    print(rate_base)
+    solution = optimize.root_scalar(f, bracket=[0, 1], method='bisect')
+    deep_thr = solution.root
+    rate_base = compute_isocut_rate(taus_rates[0], taus_rates[1], Nev_den, "mediumIsoAbs", "mediumIsoRel", Pt_thr=Pt_thr)
+    rate = compute_deepTau_rate(taus_rates[0], taus_rates[1], Nev_den, deep_thr, Pt_thr=Pt_thr)
+
+    diff = rate_base[0] - rate[0]
+    diff_err = math.sqrt(rate_base[1]**2 + rate[1]**2)
+    print("diff", diff, "+/-", diff_err)
+    print("perc", diff/rate_base[0])
 
 
     
