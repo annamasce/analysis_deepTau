@@ -8,6 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import math
 
+
 def true_taus_selected(taus, Pt_thr):
     tau_1 = taus[0]
     tau_2 = taus[1]
@@ -22,7 +23,6 @@ def true_taus_selected(taus, Pt_thr):
 
 
 # def deep_thr(tau, par, Pt_thr):
-#
 #     a_1 = (par[1] - par[0]) / (100 - Pt_thr)
 #     b_1 = par[1] - 100 * a_1
 #     c = 0.125
@@ -79,7 +79,10 @@ def compute_rate(tau_1, tau_2, Nev_den, Pt_thr, a, L1rate):
     Nev_num = ak.sum(ditau_selection(mask_1, mask_2))
     return Nev_num / Nev_den * L1rate
 
+
 k = math.log(2) / 0.1
+
+
 def loss(rate):
     if rate <= 46:
         return 0
@@ -102,13 +105,14 @@ def compute_rate_base(tau_1, tau_2, Nev_den, Pt_thr, L1rate):
     Nev_num = ak.sum(ditau_selection(mask_1, mask_2))
     return Nev_num / Nev_den * L1rate
 
+
 if __name__ == '__main__':
 
     tag = "lin2"
     fileName = [
-                "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/VBFHToTauTau.root",
-                "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/ZprimeToTauTau.root"
-               ]
+        "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/VBFHToTauTau.root",
+        "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/newSamples_CMSSW_11_2_0/ZprimeToTauTau.root"
+    ]
     treeName_in = "final_counter"
     treeName_gen = "gen_counter"
     # Pt_thr = 30
@@ -126,6 +130,7 @@ if __name__ == '__main__':
 
     Pt_thr_list = [30, 35]
     pt_bins = [30, 35, 40, 45, 50, 60, 70, 100, 150, 200, 250, 300, 400, 500]
+    pt_arrays = np.zeros([len(Pt_thr_list), 3, len(pt_bins)])
     eff = np.zeros([len(Pt_thr_list), 3, len(pt_bins)])
     eff_base = np.zeros([3, len(pt_bins)])
     optim_res = []
@@ -135,6 +140,13 @@ if __name__ == '__main__':
     for index, Pt_thr in enumerate(Pt_thr_list):
 
         taus_selected = true_taus_selected(taus, Pt_thr)
+        tau_leading = (taus_selected[0])[:, 0]
+        # print(tau_leading.pt[range(5)])
+        tau_subleading = (taus_selected[1])[:, 0]
+
+
+        # print(tau_subleading.pt[range(5)])
+
         def f(a):
             rate = compute_rate(taus_rates[0], taus_rates[1], Nev_den, Pt_thr, a, L1rate_bm)
             # print("rate\t:", rate)
@@ -143,14 +155,14 @@ if __name__ == '__main__':
             # print("funct\t:", -eff_algo + loss(rate), "\n")
             return - eff_algo + loss(rate)
 
-        # res = minimize(f, [0.7, 0.7], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
+
+        # res = minimize(f, [0.7, 0.7], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.001})
         # res = minimize(f, [0.7, 0.5], bounds=((0.125, 1), (0.125, 1)), method="L-BFGS-B", options={"eps": 0.001})
         res = minimize(f, [0.7], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 
         print("Optimized parameters:", res.x)
         optim_res.append(res.x)
         # print(0.4-100*res.x)
-
 
         # pt_bins = [35, 40, 45, 50, 55, 60, 70, 100, 169, 221, 279, 343, 414, 491]
 
@@ -178,47 +190,51 @@ if __name__ == '__main__':
             # eff_base_results = compute_eff_algo_base(tau_1, tau_2)
             # eff_base[:, i] = eff_base_results
 
-            tau_leading = (taus_selected[0])[:, 0]
-            # print(tau_leading.pt[range(5)])
-            tau_subleading = (taus_selected[1])[:, 0]
-            # print(tau_subleading.pt[range(5)])
             pt_min = pt_bins[i]
             if i != len(pt_bins) - 1:
                 pt_max = pt_bins[i + 1]
+                central_value = (pt_max + pt_min) / 2
+                pt_arrays[index, 0, i] = central_value
+                pt_arrays[index, 1, i] = central_value - pt_min
+                pt_arrays[index, 2, i] = pt_max - central_value
                 bin_mask_lead = (tau_leading.pt >= pt_min) & (tau_leading.pt < pt_max)
                 bin_mask_sublead = (tau_subleading.pt >= pt_min) & (tau_subleading.pt < pt_max)
             else:
+                central_value = (3000 + pt_min) / 2
+                pt_arrays[index, 0, i] = central_value
+                pt_arrays[index, 1, i] = central_value - pt_min
+                pt_arrays[index, 2, i] = 3000 - central_value
                 bin_mask_lead = (tau_leading.pt >= pt_min)
                 bin_mask_sublead = (tau_subleading.pt >= pt_min)
-            N_lead_inbin = ak.sum(bin_mask_lead)
-            N_sublead_inbin = ak.sum(bin_mask_sublead)
-            Nev_presel = N_lead_inbin + N_sublead_inbin
+
+            Nev_presel = ak.sum(bin_mask_lead) + ak.sum(bin_mask_sublead)
 
             deepTau_mask_lead = tau_leading.deepTau_VSjet > deep_thr(tau_leading, res.x, Pt_thr)
             deepTau_mask_sublead = tau_subleading.deepTau_VSjet > deep_thr(tau_subleading, res.x, Pt_thr)
-            N_lead_deep = ak.sum(bin_mask_lead & deepTau_mask_lead)
-            N_sublead_deep = ak.sum(bin_mask_sublead & deepTau_mask_sublead)
-            Nev_num = N_lead_deep + N_sublead_deep
+            Nev_num = ak.sum(bin_mask_lead & deepTau_mask_lead) + ak.sum(bin_mask_sublead & deepTau_mask_sublead)
 
             base_mask_lead = iso_tau_selection(tau_leading, "mediumIsoAbs", "mediumIsoRel")
             base_mask_sublead = iso_tau_selection(tau_subleading, "mediumIsoAbs", "mediumIsoRel")
-            N_lead_base = ak.sum(bin_mask_lead & base_mask_lead)
-            N_sublead_base = ak.sum(bin_mask_sublead & base_mask_sublead)
-            Nev_num_base = N_lead_base + N_sublead_base
+            Nev_num_base = ak.sum(bin_mask_lead & base_mask_lead) + ak.sum(bin_mask_sublead & base_mask_sublead)
 
             eff_results = compute_eff_witherr(Nev_num, Nev_presel)
             eff[index, :, i] = eff_results
             eff_base_results = compute_eff_witherr(Nev_num_base, Nev_presel)
             eff_base[:, i] = eff_base_results
 
-        ax.errorbar(pt_bins[start:], eff[index, 0, start:], yerr=(eff[index, 1, start:], eff[index, 2, start:]), color=colors[index], marker="o", label="deepTau at {} GeV".format(Pt_thr), linewidth=0.7)
-    ax.errorbar(pt_bins[1:], eff_base[0, 1:], yerr=(eff_base[1, start:], eff_base[2, 1:]), color="red", marker="o", label="cut-based medium", linewidth=0.7)
-    ax.set_xlabel(r"lower edge $p_{T}$ bin [GeV]")
+        ax.errorbar(pt_arrays[index, 0, start:], eff[index, 0, start:],
+                    xerr=(pt_arrays[index, 1, start:], pt_arrays[index, 2, start:]),
+                    yerr=(eff[index, 1, start:], eff[index, 2, start:]),
+                    color=colors[index], marker=".", label="deepTau at {} GeV".format(Pt_thr), linewidth=0.7, linestyle="")
+    ax.errorbar(pt_arrays[index, 0, 1:], eff_base[0, 1:], xerr=(pt_arrays[index, 1, 1:], pt_arrays[index, 2, 1:]),
+                yerr=(eff_base[1, 1:], eff_base[2, 1:]), color="red", marker=".",
+                label="cut-based medium", linewidth=0.7, linestyle="")
+    ax.set_xlabel(r"tau $p_{T}$ [GeV]")
     ax.set_ylabel("algo eff")
     ax.set_xscale("log")
     ax.set_xticks(pt_bins)
     ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
-    # plt.ylim(0.66, 1.1)
+    ax.set_xlim(0, 1000)
     plt.legend()
     plt.savefig("algo_eff_flatten_{}.pdf".format(tag))
     plt.close()

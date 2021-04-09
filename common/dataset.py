@@ -83,5 +83,7 @@ class Dataset:
         gen_taus = ak.zip({"gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
                                       "gen_phi": events.gen_tau_phi,
                                       "lepton_gen_match": events.lepton_gen_match})
+        index = ak.argsort(gen_taus.gen_pt, ascending=False)
+        gen_taus = gen_taus[index]
         gen_tau_1, gen_tau_2 = ak.unzip(ak.combinations(gen_taus, 2, axis=1))
         return gen_tau_1, gen_tau_2

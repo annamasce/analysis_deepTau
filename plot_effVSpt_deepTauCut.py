@@ -73,78 +73,65 @@ if __name__ == '__main__':
     for n, Pt_thr in enumerate(Pt_thr_list):
 
         def f(deepTau_thr):
-            rate, _, _ = compute_deepTau_rate(taus_rates, Nev_den, deepTau_thr, Pt_thr=Pt_thr, L1rate=L1rate_bm)
-            isocut_rate, _, _ = compute_isocut_rate(taus_rates, Nev_den, "mediumIsoAbs", "mediumIsoRel", Pt_thr=35)
+            rate, _, _ = compute_deepTau_rate(taus_rates[0], taus_rates[1], Nev_den, deepTau_thr, Pt_thr=Pt_thr, L1rate=L1rate_bm)
+            isocut_rate, _, _ = compute_isocut_rate(taus_rates[0], taus_rates[1], Nev_den, "mediumIsoAbs", "mediumIsoRel", Pt_thr=35)
             return rate - isocut_rate
 
         solution = optimize.root_scalar(f, bracket=[0, 1], method='bisect')
         if solution.converged:
-            deepTau_thr = solution.root
-            print("deepTau threshold at {} GeV: {}".format(Pt_thr, deepTau_thr))
+            thr = solution.root
+            print("deepTau threshold at {} GeV: {}".format(Pt_thr, thr))
         else:
             print("root finding did not converged for Pt {} GeV".format(Pt_thr))
 
         print("Plotting differential efficiency vs gen Pt")
-        num_tau_mask, den_tau_mask = num_den_mask_eff(taus, gen_taus, Pt_thr=Pt_thr)
-        num_tau_mask_deepTau = deepTau_selection(taus, deepTau_thr) & num_tau_mask
-        num_ev_mask = ditau_selection(num_tau_mask_deepTau)
-        taus_num = taus[num_tau_mask_deepTau]
-        taus_num = taus_num[num_ev_mask]
+        num_tau_mask_1, num_tau_mask_2, den_tau_mask_1, den_tau_mask_2 = apply_numden_masks(taus[0], taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
+        num_tau_mask_deepTau_1 = deepTau_selection(taus[0], thr) & num_tau_mask_1
+        num_tau_mask_deepTau_2 = deepTau_selection(taus[1], thr) & num_tau_mask_2
+        num_pair_mask = num_tau_mask_deepTau_1 & num_tau_mask_deepTau_2
+        num_ev_mask = ditau_selection(num_tau_mask_deepTau_1, num_tau_mask_deepTau_2)
+        # take only leading pair
+        tau_num_1 = ak.firsts((taus[0][num_pair_mask])[num_ev_mask], axis=-1)
+        tau_num_2 = ak.firsts((taus[1][num_pair_mask])[num_ev_mask], axis=-1)
 
-        den_ev_mask = ditau_selection(den_tau_mask)
-        taus_den = gen_taus[den_tau_mask]
-        taus_den = taus_den[den_ev_mask]
+        den_pair_mask = den_tau_mask_1 & den_tau_mask_2
+        den_ev_mask = ditau_selection(den_tau_mask_1, den_tau_mask_2)
+        tau_den_1 = ak.firsts((gen_taus[0][den_pair_mask])[den_ev_mask], axis=-1)
+        tau_den_2 = ak.firsts((gen_taus[1][den_pair_mask])[den_ev_mask], axis=-1)
 
-        # numerator histograms
-        num_hist = TH1D("num", "", nbins, array("d", Pt_bins))
+        # numerator histogram
         num_hist_2D = TH2D("num_2d", "", nbins, array("d", Pt_bins), nbins, array("d", Pt_bins))
         # denominator histograms
-        den_hist = TH1D("den", "", nbins, array("d", Pt_bins))
         den_hist_2D = TH2D("den_2d", "", nbins, array("d", Pt_bins), nbins, array("d", Pt_bins))
 
         # Fill histograms with gen tau pt of leading and subleading taus
-        for gen_pt in taus_num.gen_pt:
-            gen_pt_sorted = np.sort(gen_pt)[::-1]
-            num_hist.Fill(gen_pt_sorted[0])
-            num_hist.Fill(gen_pt_sorted[1])
-            num_hist_2D.Fill(gen_pt_sorted[0], gen_pt_sorted[1])
-        for gen_pt in taus_den.gen_pt:
-            gen_pt_sorted = np.sort(gen_pt)[::-1]
-            den_hist.Fill(gen_pt_sorted[0])
-            den_hist.Fill(gen_pt_sorted[1])
-            den_hist_2D.Fill(gen_pt_sorted[0], gen_pt_sorted[1])
+        for i in range(len(tau_num_1)):
+            num_hist_2D.Fill(tau_num_1.gen_pt[i], tau_num_2.gen_pt[i])
+            # if i % 100 == 0:
+            #     print(tau_num_1.gen_pt[i], tau_num_2.gen_pt[i])
+        for i in range(len(tau_den_1)):
+            den_hist_2D.Fill(tau_den_1.gen_pt[i], tau_den_2.gen_pt[i])
 
         # Compute efficiency
-        eff_hist = num_hist.Clone("eff")
         eff_hist_2D = num_hist_2D.Clone("eff_2d")
-        eff_hist.Divide(den_hist)
         eff_hist_2D.Divide(den_hist_2D)
-
-        eff_hist.SetTitle("Pt > {}".format(Pt_thr))
-        eff_hist.GetXaxis().SetTitle("gen p_{T} [GeV]")
-        eff_hist.GetXaxis().SetRangeUser(Pt_bins[0], Pt_bins[-1]-5.)
-        eff_hist.GetYaxis().SetTitle("Efficiency")
 
         eff_hist_2D = set_eff2Dhist_style(eff_hist_2D, Pt_thr, Pt_bins[-1])
 
-        if Pt_thr==35:
-            num_tau_mask_mediumIso = iso_tau_selection(taus, "mediumIsoAbs", "mediumIsoRel") & num_tau_mask
-            num_ev_mask = ditau_selection(num_tau_mask_mediumIso)
-            taus_num = taus[num_tau_mask_mediumIso]
-            taus_num = taus_num[num_ev_mask]
-            num_hist_2D = TH2D("num_2d", "", nbins, array("d", Pt_bins), nbins, array("d", Pt_bins))
-            for gen_pt in taus_num.gen_pt:
-                gen_pt_sorted = np.sort(gen_pt)[::-1]
-                num_hist_2D.Fill(gen_pt_sorted[0], gen_pt_sorted[1])
-            eff_hist_2D_base = num_hist_2D.Clone("eff_2d_base")
-            eff_hist_2D_base.Divide(den_hist_2D)
-            eff_hist_2D_base = set_eff2Dhist_style(eff_hist_2D_base, Pt_thr, Pt_bins[-1], cut_based=True)
+        # if Pt_thr==35:
+        #     num_tau_mask_mediumIso = iso_tau_selection(taus, "mediumIsoAbs", "mediumIsoRel") & num_tau_mask
+        #     num_ev_mask = ditau_selection(num_tau_mask_mediumIso)
+        #     taus_num = taus[num_tau_mask_mediumIso]
+        #     taus_num = taus_num[num_ev_mask]
+        #     num_hist_2D = TH2D("num_2d", "", nbins, array("d", Pt_bins), nbins, array("d", Pt_bins))
+        #     for gen_pt in taus_num.gen_pt:
+        #         gen_pt_sorted = np.sort(gen_pt)[::-1]
+        #         num_hist_2D.Fill(gen_pt_sorted[0], gen_pt_sorted[1])
+        #     eff_hist_2D_base = num_hist_2D.Clone("eff_2d_base")
+        #     eff_hist_2D_base.Divide(den_hist_2D)
+        #     eff_hist_2D_base = set_eff2Dhist_style(eff_hist_2D_base, Pt_thr, Pt_bins[-1], cut_based=True)
 
         gStyle.SetOptStat(0)
-        drawCanv = TCanvas("c","")
-        gPad.SetLogx(0)
-        gPad.SetLogy(0)
-        eff_hist.Draw("E")
         drawCanv_2d = TCanvas("c2", "")
         gPad.SetLogx()
         gPad.SetLogy()
@@ -152,22 +139,19 @@ if __name__ == '__main__':
         eff_hist_2D.Draw("colz text")
 
         if n == 0 and n != len(Pt_thr_list) - 1:
-            drawCanv.Print(plot_path + "diffeff_VSgenPt_" + plot_name + ".pdf(")
             drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_" + plot_name + ".pdf(")
         elif n == len(Pt_thr_list) - 1:
-            drawCanv.Print(plot_path + "diffeff_VSgenPt_" + plot_name + ".pdf)")
             drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_" + plot_name + ".pdf)")
         else:
-            drawCanv.Print(plot_path + "diffeff_VSgenPt_" + plot_name + ".pdf")
             drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_" + plot_name + ".pdf")
 
-        if Pt_thr==35:
-            drawCanv_2d = TCanvas("c2_base", "")
-            gPad.SetLogx()
-            gPad.SetLogy()
-            gStyle.SetPaintTextFormat("1.2f")
-            eff_hist_2D_base.Draw("colz text")
-            drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_base_" + plot_name + ".pdf")
+        # if Pt_thr==35:
+        #     drawCanv_2d = TCanvas("c2_base", "")
+        #     gPad.SetLogx()
+        #     gPad.SetLogy()
+        #     gStyle.SetPaintTextFormat("1.2f")
+        #     eff_hist_2D_base.Draw("colz text")
+        #     drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_base_" + plot_name + ".pdf")
 
 
     # # plt.title(r"Efficiency vs $p_{T}$")
