@@ -118,18 +118,20 @@ if __name__ == '__main__':
 
         eff_hist_2D = set_eff2Dhist_style(eff_hist_2D, Pt_thr, Pt_bins[-1])
 
-        # if Pt_thr==35:
-        #     num_tau_mask_mediumIso = iso_tau_selection(taus, "mediumIsoAbs", "mediumIsoRel") & num_tau_mask
-        #     num_ev_mask = ditau_selection(num_tau_mask_mediumIso)
-        #     taus_num = taus[num_tau_mask_mediumIso]
-        #     taus_num = taus_num[num_ev_mask]
-        #     num_hist_2D = TH2D("num_2d", "", nbins, array("d", Pt_bins), nbins, array("d", Pt_bins))
-        #     for gen_pt in taus_num.gen_pt:
-        #         gen_pt_sorted = np.sort(gen_pt)[::-1]
-        #         num_hist_2D.Fill(gen_pt_sorted[0], gen_pt_sorted[1])
-        #     eff_hist_2D_base = num_hist_2D.Clone("eff_2d_base")
-        #     eff_hist_2D_base.Divide(den_hist_2D)
-        #     eff_hist_2D_base = set_eff2Dhist_style(eff_hist_2D_base, Pt_thr, Pt_bins[-1], cut_based=True)
+        if Pt_thr==35:
+            num_tau_mask_mediumIso_1 = iso_tau_selection(taus[0], "mediumIsoAbs", "mediumIsoRel") & num_tau_mask_1
+            num_tau_mask_mediumIso_2 = iso_tau_selection(taus[1], "mediumIsoAbs", "mediumIsoRel") & num_tau_mask_2
+            num_pair_mask = num_tau_mask_mediumIso_1 & num_tau_mask_mediumIso_2
+            num_ev_mask = ditau_selection(num_tau_mask_mediumIso_1, num_tau_mask_mediumIso_2)
+
+            tau_num_1 = ak.firsts((taus[0][num_pair_mask])[num_ev_mask], axis=-1)
+            tau_num_2 = ak.firsts((taus[1][num_pair_mask])[num_ev_mask], axis=-1)
+            num_hist_2D = TH2D("num_2d", "", nbins, array("d", Pt_bins), nbins, array("d", Pt_bins))
+            for i in range(len(tau_num_1)):
+                num_hist_2D.Fill(tau_num_1.gen_pt[i], tau_num_2.gen_pt[i])
+            eff_hist_2D_base = num_hist_2D.Clone("eff_2d_base")
+            eff_hist_2D_base.Divide(den_hist_2D)
+            eff_hist_2D_base = set_eff2Dhist_style(eff_hist_2D_base, Pt_thr, Pt_bins[-1], cut_based=True)
 
         gStyle.SetOptStat(0)
         drawCanv_2d = TCanvas("c2", "")
@@ -145,13 +147,13 @@ if __name__ == '__main__':
         else:
             drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_" + plot_name + ".pdf")
 
-        # if Pt_thr==35:
-        #     drawCanv_2d = TCanvas("c2_base", "")
-        #     gPad.SetLogx()
-        #     gPad.SetLogy()
-        #     gStyle.SetPaintTextFormat("1.2f")
-        #     eff_hist_2D_base.Draw("colz text")
-        #     drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_base_" + plot_name + ".pdf")
+        if Pt_thr==35:
+            drawCanv_2d = TCanvas("c2_base", "")
+            gPad.SetLogx()
+            gPad.SetLogy()
+            gStyle.SetPaintTextFormat("1.2f")
+            eff_hist_2D_base.Draw("colz text")
+            drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_base_" + plot_name + ".pdf")
 
 
     # # plt.title(r"Efficiency vs $p_{T}$")

@@ -63,7 +63,8 @@ def deep_thr(tau, par, Pt_thr):
 
 # define function to compute algorithmic efficiency
 def compute_eff_algo(tau_1, tau_2, a, Pt_thr):
-    eff_presel = ak.sum(ak.num(tau_1, axis=-1))
+    # eff_presel = len(tau_1)
+    eff_presel = ak.sum(ak.num(tau_1, axis=-1)>0)
     deepTau_thr_1 = deep_thr(tau_1, a, Pt_thr)
     deepTau_thr_2 = deep_thr(tau_2, a, Pt_thr)
     deepTau_mask_1 = tau_1.deepTau_VSjet > deepTau_thr_1
@@ -149,14 +150,14 @@ if __name__ == '__main__':
 
         def f(a):
             rate = compute_rate(taus_rates[0], taus_rates[1], Nev_den, Pt_thr, a, L1rate_bm)
-            # print("rate\t:", rate)
+            print("rate\t:", rate)
             eff_algo, _, _ = compute_eff_algo(taus_selected[0], taus_selected[1], a, Pt_thr)
             # print("eff\t:", eff_algo)
             # print("funct\t:", -eff_algo + loss(rate), "\n")
             return - eff_algo + loss(rate)
 
 
-        # res = minimize(f, [0.7, 0.7], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.001})
+        # res = minimize(f, [0.7, 0.5], bounds=((0.125, 1), (0.125, 1)), method="L-BFGS-B", options={"eps": 0.001})
         # res = minimize(f, [0.7, 0.5], bounds=((0.125, 1), (0.125, 1)), method="L-BFGS-B", options={"eps": 0.001})
         res = minimize(f, [0.7], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 

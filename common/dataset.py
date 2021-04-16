@@ -12,12 +12,10 @@ def iterable(arg):
     )
 
 class Dataset:
-    def __init__(self, fileName, treeName, treeName_gen, is_MC=True, is_old=False):
+    def __init__(self, fileName, treeName, treeName_gen):
         self.fileName = fileName
         self.treeName = treeName
         self.treeName_gen = treeName_gen
-        self.is_old = is_old
-        self.is_MC = is_MC
 
     def __define_tree_expression(self, is_gen):
         if is_gen:
@@ -55,27 +53,28 @@ class Dataset:
                      "tightIsoAbs": events.tau_tightIsoAbs, "tightIsoRel": events.tau_tightIsoRel,
                      "gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
                      "gen_phi": events.gen_tau_phi,
-                     "lepton_gen_match": events.lepton_gen_match, "deepTau_VSjet": events.deepTau_VSjet}
-        if self.is_old:
-            taus = ak.zip(taus_dict)
-            index = ak.argsort(taus.pt, ascending=False)
-            taus = taus[index]
-            tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
-        else:
-            taus_dict["vz"] = events.tau_vz
-            taus = ak.zip(taus_dict)
-            index = ak.argsort(taus.pt, ascending=False)
-            taus = taus[index]
-            tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
-            if apply_selection:
-                L1taus = ak.zip({"e": events.L1tau_e, "pt": events.L1tau_pt, "eta": events.L1tau_eta,
-                                 "phi": events.L1tau_phi})
-                # apply L1seed correction in case Pt28 and Pt30 seeds are considered
-                L1taus, taus = L1seed_correction(L1taus, taus)
-                # match taus with L1 taus
-                taus = L1THLTTauMatching(L1taus, taus)
-                tau_1, tau_2 = HLTJetPairDzMatchFilter(taus)
+                     "lepton_gen_match": events.lepton_gen_match, "deepTau_VSjet": events.deepTau_VSjet, "vz":events.tau_vz,
+                     "idx": ak.local_index(events.tau_pt, axis=-1)}
+
+        taus = ak.zip(taus_dict)
+        # index = ak.argsort(taus.pt, ascending=False)
+        # taus = taus[index]
+        # tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
+        if apply_selection:
+            L1taus = ak.zip({"e": events.L1tau_e, "pt": events.L1tau_pt, "eta": events.L1tau_eta,
+                             "phi": events.L1tau_phi})
+            # apply L1seed correction in case Pt28 and Pt30 seeds are considered
+            L1taus, taus = L1seed_correction(L1taus, taus)
+            # match taus with L1 taus
+            taus = L1THLTTauMatching(L1taus, taus)
+            # taus_matched = L1THLTTauMatching_unique(L1taus, taus)
+            tau_1, tau_2 = HLTJetPairDzMatchFilter(taus)
+            return tau_1, tau_2
+            # tau_1, tau_2 = HLTJetPairDzMatchFilter(taus_matched[0], taus_matched[1])
         # Return all possible pairs of tau which pass preselection
+        index = ak.argsort(taus.pt, ascending=False)
+        taus = taus[index]
+        tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
         return tau_1, tau_2
 
     def get_gen_taus(self):

@@ -63,7 +63,7 @@ def iso_tau_selection(taus, var_abs, var_rel):
 
 def ditau_selection(mask_tau_1, mask_tau_2):
     # require at least one pair of good taus per event
-    ev_mask = ak.sum(mask_tau_1 & mask_tau_2, axis=1) >= 1
+    ev_mask = ak.sum(mask_tau_1 & mask_tau_2, axis=-1) >= 1
     return ev_mask
 
 def L1seed_correction(L1taus, taus):
@@ -74,19 +74,53 @@ def L1seed_correction(L1taus, taus):
 
 def L1THLTTauMatching(L1taus, taus):
     dR_matching = 0.5
-    tau_inpair, L1_inpair = ak.unzip(ak.cartesian([taus, L1taus], nested=True))
-    # dR = delta_r(L1_inpair, tau_inpair)
+    L1_inpair, tau_inpair = ak.unzip(ak.cartesian([L1taus, taus], nested=True))
     dR = delta_r(tau_inpair, L1_inpair)
-    # # print(dR[range(2)])
-    # # consider only L1taus for which there is at least 1 matched tau
-    # tau_inpair = tau_inpair[dR<dR_matching]
+    # consider only L1taus for which there is at least 1 matched tau
     mask = ak.sum(dR < dR_matching, axis=-1) > 0
-    # tau_inpair = tau_inpair[mask]
-    # # take first matched tau for each L1tau
-    # L2taus = tau_inpair[:,:,0]
-    # # print(L2taus[range(2)])
-    L2taus = taus[mask]
+    tau_inpair = (tau_inpair[dR < dR_matching])[mask]
+    # take first matched tau for each L1tau
+    L2taus = tau_inpair[:,:,0]
+    # index_list = []
+    # for i in range(len(L2taus)):
+    #     _, index_taus = np.unique(ak.to_numpy(L2taus.idx[i,:]), return_index=True)
+    #     index_list.append(index_taus)
+    # index_array = ak.Array(index_list)
+    # L2taus = L2taus[index_array]
+    index = ak.argsort(L2taus.pt, ascending=False)
+    L2taus = L2taus[index]
     return L2taus
+
+# def L1THLTTauMatching(L1taus, taus):
+#     dR_matching = 0.5
+#     tau_inpair, L1_inpair = ak.unzip(ak.cartesian([taus, L1taus], nested=True))
+#     dR = delta_r(L1_inpair, tau_inpair)
+#     # # print(dR[range(2)])
+#     # # consider only L1taus for which there is at least 1 matched tau
+#     # tau_inpair = tau_inpair[dR<dR_matching]
+#     mask = ak.sum(dR < dR_matching, axis=-1) > 0
+#     # tau_inpair = tau_inpair[mask]
+#     # # take first matched tau for each L1tau
+#     # L2taus = tau_inpair[:,:,0]
+#     # # # print(L2taus[range(2)])
+#     L2taus = taus[mask]
+#     return L2taus
+
+def L1THLTTauMatching_unique(L1taus, taus):
+    dr_cut = 0.5
+    tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
+    p_tau_1, p_L1tau_1 = ak.unzip(ak.cartesian([tau_1, L1taus], nested=True))
+    dr_1_pass = delta_r(p_tau_1, p_L1tau_1) < dr_cut
+
+    p_tau_2, p_L1tau_2 = ak.unzip(ak.cartesian([tau_2, L1taus], nested=True))
+    dr_2_pass = delta_r(p_tau_2, p_L1tau_2) < dr_cut
+
+    # There need to be at least two matches, and at least one match for each HPS tau
+    any_pass = dr_1_pass | dr_2_pass
+    pair_mask = (ak.sum(any_pass, axis=-1) >= 2) & (ak.sum(dr_1_pass, axis=-1) >= 1) & (ak.sum(dr_2_pass, axis=-1) >= 1)
+    ev_mask = ak.sum(pair_mask, axis=-1) >= 1
+    return (tau_1[pair_mask])[ev_mask], (tau_2[pair_mask])[ev_mask]
+
 
 
 def HLTJetPairDzMatchFilter(L2taus):
@@ -96,10 +130,23 @@ def HLTJetPairDzMatchFilter(L2taus):
     jetMaxDZ = 0.2
     L2taus = L2taus[reco_tau_selection(L2taus, minPt=jetMinPt, maxEta=jetMaxEta)]
     # Take all possible pairs of L2 taus
-    L2tau_1, L2tau_2 = ak.unzip(ak.combinations(L2taus, 2, axis=1))
+    L2tau_1, L2tau_2 = ak.unzip(ak.combinations(L2taus, 2, axis=-1))
     dr2 = delta_r2(L2tau_1, L2tau_2)
     dz = delta_z(L2tau_1, L2tau_2)
-    pair_mask = (dr2 >= jetMinDR * jetMinDR) & (abs(dz) <= jetMaxDZ)
+    pair_mask = (dr2 >= (jetMinDR * jetMinDR)) & (abs(dz) <= jetMaxDZ)
     # ev_mask = ak.sum(pair_mask, axis=1) > 0
 
     return L2tau_1[pair_mask], L2tau_2[pair_mask]
+
+# def HLTJetPairDzMatchFilter(tau_1, tau_2):
+#     jetMinPt = 20.0
+#     jetMaxEta = 2.1
+#     jetMinDR = 0.5
+#     jetMaxDZ = 0.2
+#     reco_mask = reco_tau_selection(tau_1, minPt=jetMinPt, maxEta=jetMaxEta) & reco_tau_selection(tau_2, minPt=jetMinPt, maxEta=jetMaxEta)
+#     dr2 = delta_r2(tau_1, tau_2)
+#     dz = delta_z(tau_1, tau_2)
+#     pair_mask = (dr2 >= jetMinDR * jetMinDR) & (abs(dz) <= jetMaxDZ) & reco_mask
+#     # ev_mask = ak.sum(pair_mask, axis=1) > 0
+#
+#     return tau_1[pair_mask], tau_2[pair_mask]

@@ -24,6 +24,7 @@ Nev_den = len(dataset_rates.get_gen_events())
 for n, Pt_thr in enumerate(Pt_thr_list):
     print("\nComputing rate improvement at {} GeV".format(Pt_thr))
     eff_base, _, _ = compute_isocut_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], "mediumIsoAbs", "mediumIsoRel", Pt_thr=Pt_thr)
+    print(eff_base)
 
     def f(thr):
         eff, _, _ = compute_deepTau_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], thr, Pt_thr=Pt_thr)
@@ -34,6 +35,8 @@ for n, Pt_thr in enumerate(Pt_thr_list):
     rate_base = compute_isocut_rate(taus_rates[0], taus_rates[1], Nev_den, "mediumIsoAbs", "mediumIsoRel", Pt_thr=Pt_thr)
     rate = compute_deepTau_rate(taus_rates[0], taus_rates[1], Nev_den, deep_thr, Pt_thr=Pt_thr)
 
+    print(rate_base[0])
+    print(rate[0])
     diff = rate_base[0] - rate[0]
     diff_err = math.sqrt(rate_base[1]**2 + rate[1]**2)
     print("diff", diff, "+/-", diff_err)
