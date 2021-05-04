@@ -23,7 +23,7 @@ with PdfPages(plot_path + 'deepTau_output_{}.pdf'.format(plot_name)) as pdf:
 
     # get trees from file
     dataset_VBF = Dataset(fileName_eff, treeName_in, treeName_gen)
-    L2taus = dataset_VBF.get_taus(apply_selection=True)
+    L2taus = dataset_VBF.get_tau_pairs(apply_selection=True)
 
     # generate ROC curve for deepTau_VSjet
     fpr, tpr, thr, pred, truth = ROC_fromTuples(L2taus)

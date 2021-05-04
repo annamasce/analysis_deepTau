@@ -32,11 +32,11 @@ colors = ["green", "red", "orange"]
 # get VBF sample
 print("Loading sample for efficiency")
 dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
-taus = dataset_eff.get_taus()
-gen_taus = dataset_eff.get_gen_taus()
+taus = dataset_eff.get_tau_pairs()
+gen_taus = dataset_eff.get_gen_tau_pairs()
 
 # get taus before any selection
-original_taus = dataset_eff.get_taus(apply_selection=False)
+original_taus = dataset_eff.get_tau_pairs(apply_selection=False)
 
 # get sample for rate computation
 print("Loading sample for rate")
@@ -49,14 +49,14 @@ if args.qcd:
         samples = json.load(json_file)
         for key, value in samples.items():
             data = Dataset(data_path + value[0], treeName_in, treeName_gen)
-            QCD_taus_list.append(data.get_taus())
+            QCD_taus_list.append(data.get_tau_pairs())
             QCD_xs_list.append(value[1])
             QCD_den_list.append(len(data.get_gen_events())) 
     print(QCD_xs_list)
 else:
     # get HLT physics sample
     dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
-    taus_rates = dataset_rates.get_taus()
+    taus_rates = dataset_rates.get_tau_pairs()
     Nev_den = len(dataset_rates.get_gen_events())
 
 with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:

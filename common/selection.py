@@ -66,11 +66,10 @@ def ditau_selection(mask_tau_1, mask_tau_2):
     ev_mask = ak.sum(mask_tau_1 & mask_tau_2, axis=-1) >= 1
     return ev_mask
 
-def L1seed_correction(L1taus, taus):
+def L1seed_correction(events, L1taus, taus):
     L1taus_mask = (L1taus.pt >= 32)
     ev_mask = ak.sum(L1taus_mask, axis=1) >= 2
-    return (L1taus[L1taus_mask])[ev_mask], taus[ev_mask]
-    # return L1taus[ev_mask], taus[ev_mask]
+    return events[ev_mask], (L1taus[L1taus_mask])[ev_mask], taus[ev_mask]
 
 def L1THLTTauMatching(L1taus, taus):
     dR_matching = 0.5
@@ -122,8 +121,7 @@ def L1THLTTauMatching_unique(L1taus, taus):
     return (tau_1[pair_mask])[ev_mask], (tau_2[pair_mask])[ev_mask]
 
 
-
-def HLTJetPairDzMatchFilter(L2taus):
+def HLTJetPairDzMatchFilter(events, L2taus):
     jetMinPt = 20.0
     jetMaxEta = 2.1
     jetMinDR = 0.5
@@ -134,9 +132,9 @@ def HLTJetPairDzMatchFilter(L2taus):
     dr2 = delta_r2(L2tau_1, L2tau_2)
     dz = delta_z(L2tau_1, L2tau_2)
     pair_mask = (dr2 >= (jetMinDR * jetMinDR)) & (abs(dz) <= jetMaxDZ)
-    # ev_mask = ak.sum(pair_mask, axis=1) > 0
+    ev_mask = ak.sum(pair_mask, axis=-1) >=1
 
-    return L2tau_1[pair_mask], L2tau_2[pair_mask]
+    return events[ev_mask], L2tau_1[pair_mask][ev_mask], L2tau_2[pair_mask][ev_mask]
 
 # def HLTJetPairDzMatchFilter(tau_1, tau_2):
 #     jetMinPt = 20.0
@@ -150,3 +148,14 @@ def HLTJetPairDzMatchFilter(L2taus):
 #     # ev_mask = ak.sum(pair_mask, axis=1) > 0
 #
 #     return tau_1[pair_mask], tau_2[pair_mask]
+
+def apply_ditauHLT_selection(events, taus, L1taus, return_events=False):
+    # apply L1seed correction in case Pt28 and Pt30 seeds are considered
+    events, L1taus, taus = L1seed_correction(events, L1taus, taus)
+    # match taus with L1 taus
+    taus = L1THLTTauMatching(L1taus, taus)
+    events, tau_1, tau_2 = HLTJetPairDzMatchFilter(events, taus)
+    if return_events:
+        return events, tau_1, tau_2
+    return tau_1, tau_2
+

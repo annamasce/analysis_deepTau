@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # load taus from VBF and Zprime dataset
     dataset_eff = Dataset(fileName_eff, treeName_in, treeName_gen)
-    taus = dataset_eff.get_taus()
+    taus = dataset_eff.get_tau_pairs()
     tau_leading, tau_subleading = get_leading_pair(taus)
 
     n_bins = 100

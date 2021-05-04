@@ -13,12 +13,12 @@ Pt_thr_list = [20, 25, 30, 35, 40, 45]
 treeName_gen = "gen_counter"
 treeName_in = "final_counter"
 dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
-taus = dataset_eff.get_taus()
-gen_taus = dataset_eff.get_gen_taus()
+taus = dataset_eff.get_tau_pairs()
+gen_taus = dataset_eff.get_gen_tau_pairs()
 
 # get HLT physics sample
 dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
-taus_rates = dataset_rates.get_taus()
+taus_rates = dataset_rates.get_tau_pairs()
 Nev_den = len(dataset_rates.get_gen_events())
 
 for n, Pt_thr in enumerate(Pt_thr_list):

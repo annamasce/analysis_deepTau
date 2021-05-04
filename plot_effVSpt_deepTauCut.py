@@ -1,4 +1,5 @@
 import json
+import matplotlib.pyplot as plt
 import ROOT
 from ROOT import *
 from array import array
@@ -55,20 +56,19 @@ if __name__ == '__main__':
     # get sample for efficiency
     print("Loading sample for efficiency")
     dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
-    taus = dataset_eff.get_taus()
-    gen_taus = dataset_eff.get_gen_taus()
+    taus = dataset_eff.get_tau_pairs()
+    gen_taus = dataset_eff.get_gen_tau_pairs()
 
     # get sample for rates
     print("Loading sample for rate")
     dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
-    taus_rates = dataset_rates.get_taus()
+    taus_rates = dataset_rates.get_tau_pairs()
     Nev_den = len(dataset_rates.get_gen_events())
 
     Pt_thr_list = [20, 25, 30, 35, 40, 45]
     Pt_bins = [20, 25, 30, 35, 40, 45, 50, 60, 70, 100, 200]
     nbins = len(Pt_bins) - 1
-    thr_list = np.flip(np.linspace(0.0, 1.0, num=101))
-    eff_atThreshold = []
+    eff_atThreshold = np.zeros((3, len(Pt_thr_list)))
 
     for n, Pt_thr in enumerate(Pt_thr_list):
 
@@ -83,6 +83,8 @@ if __name__ == '__main__':
             print("deepTau threshold at {} GeV: {}".format(Pt_thr, thr))
         else:
             print("root finding did not converged for Pt {} GeV".format(Pt_thr))
+            break
+        eff_atThreshold[:, n] = compute_deepTau_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], thr, Pt_thr=Pt_thr)
 
         print("Plotting differential efficiency vs gen Pt")
         num_tau_mask_1, num_tau_mask_2, den_tau_mask_1, den_tau_mask_2 = apply_numden_masks(taus[0], taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
@@ -156,13 +158,14 @@ if __name__ == '__main__':
             drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_base_" + plot_name + ".pdf")
 
 
-    # # plt.title(r"Efficiency vs $p_{T}$")
-    # plt.xlabel(r"$p_{T}$ threshold [GeV]")
-    # plt.ylabel("Efficiency")
-    # plt.plot(Pt_thr_list, eff_atThreshold, ".", label="deepTau discriminator")
-    # eff_base, _, _ = compute_isocut_eff(taus, gen_taus, "mediumIsoAbs", "mediumIsoRel", Pt_thr=35.)
-    # print("\nBase efficiency", eff_base)
-    # plt.plot(35, eff_base, ".", color="orange", label="cut-based Medium WP (Run 2 setup)")
-    # plt.legend()
-    # plt.savefig(plot_path + "effVSpt_" + plot_name + ".pdf")
-    # plt.close()
+    # plt.title(r"Efficiency vs $p_{T}$")
+    plt.xlabel(r"$p_{T}$ threshold [GeV]")
+    plt.ylabel("Efficiency")
+    plt.errorbar(Pt_thr_list, eff_atThreshold[0, :], yerr= eff_atThreshold[1:, :], marker='.', label="deepTau discriminator", linestyle="")
+    eff_base, _, _ = compute_isocut_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], "mediumIsoAbs", "mediumIsoRel", Pt_thr=35.)
+    print("\nBase efficiency", eff_base)
+    print(eff_atThreshold[0, :])
+    plt.plot(35, eff_base, ".", color="orange", label="cut-based Medium WP (Run 2 setup)")
+    plt.legend()
+    plt.savefig(plot_path + "effVSpt_" + plot_name + ".pdf")
+    plt.close()
