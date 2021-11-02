@@ -31,6 +31,14 @@ def delta_z(v1, v2):
     dz = v1.vz - v2.vz
     return dz
 
+def deep_thr(tau, par, Pt_thr):
+    c = 0.125
+    m = (c - par[0])/(300 - Pt_thr)
+    q = c - m*300
+    thr1 = ak.where((tau.pt < 300), m*tau.pt + q, 0)
+    thr2 = ak.where(tau.pt >= 300, c, 0)
+    deep_thr = thr1 + thr2
+    return deep_thr
 
 def true_tau_selection(taus):
     tau_mask = taus.lepton_gen_match == 5
@@ -55,6 +63,10 @@ def deepTau_selection(taus, deepTau_thr):
     tau_mask = (true_taus_pred >= deepTau_thr)
     return tau_mask
 
+def deepTau_selection_ptdep(taus, Pt_thr, par):
+    true_taus_pred = taus.deepTau_VSjet  # deepTau prediction for tau vs jets
+    tau_mask = (true_taus_pred >= deep_thr(taus, par, Pt_thr))
+    return tau_mask
 
 def iso_tau_selection(taus, var_abs, var_rel):
     tau_mask = (taus[var_abs] > 0) | (taus[var_rel] > 0)

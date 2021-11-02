@@ -94,19 +94,68 @@ class Dataset:
         return gen_tau_1, gen_tau_2
 
 
-class DatasetOffline(Dataset):
+# class DatasetOffline(Dataset):
+#     def get_off_taus(self, events=None):
+#         if events is None:
+#             events = self.get_events()
+#         off_taus_dict = {"e": events.off_tau_e, "pt": events.off_tau_pt, "eta": events.off_tau_eta,
+#                          "phi": events.off_tau_phi,
+#                          "gen_e": events.off_gen_tau_e, "gen_pt": events.off_gen_tau_pt,
+#                          "gen_eta": events.off_gen_tau_eta,
+#                          "gen_phi": events.off_gen_tau_phi,
+#                          "lepton_gen_match": events.off_lepton_gen_match, "deepTau_VSjet": events.off_deepTau_VSjet,
+#                          "deepTau_VSe": events.off_deepTau_VSe, "deepTau_VSmu": events.off_deepTau_VSmu,
+#                          "dz": events.off_tau_dz, "decayModeFinding": events.off_decayModeFinding,
+#                          "decayMode": events.off_decayMode,
+#                          "idx": ak.local_index(events.off_tau_pt, axis=-1)}
+#         off_taus = ak.zip(off_taus_dict)
+#         return off_taus
+
+class DatasetOffline():
+
+    def __init__(self, fileName, treeName):
+        self.fileName = fileName
+        self.treeName = treeName
+        events = uproot.lazy(self.__define_tree_expression(is_gen=False))
+        self.__events = events
+
+    def __define_tree_expression(self, is_gen):
+        if is_gen:
+            treeName = self.treeName_gen
+        else:
+            treeName = self.treeName
+        if iterable(self.fileName):
+            tree_path = []
+            for file in self.fileName:
+                tree_path.append(file + ":" + treeName)
+        else:
+            tree_path = self.fileName + ":" + treeName
+        return tree_path
+
+    def get_events(self):
+        return self.__events
+
     def get_off_taus(self, events=None):
         if events is None:
             events = self.get_events()
-        off_taus_dict = {"e": events.off_tau_e, "pt": events.off_tau_pt, "eta": events.off_tau_eta,
-                         "phi": events.off_tau_phi,
-                         "gen_e": events.off_gen_tau_e, "gen_pt": events.off_gen_tau_pt,
-                         "gen_eta": events.off_gen_tau_eta,
-                         "gen_phi": events.off_gen_tau_phi,
-                         "lepton_gen_match": events.off_lepton_gen_match, "deepTau_VSjet": events.off_deepTau_VSjet,
-                         "deepTau_VSe": events.off_deepTau_VSe, "deepTau_VSmu": events.off_deepTau_VSmu,
-                         "dz": events.off_tau_dz, "decayModeFinding": events.off_decayModeFinding,
-                         "decayMode": events.off_decayMode,
-                         "idx": ak.local_index(events.off_tau_pt, axis=-1)}
+        off_taus_dict = {"e": events.tau_off_e, "pt": events.tau_off_pt, "eta": events.tau_off_eta,
+                         "phi": events.tau_off_phi,
+                         "gen_e": events.gen_tau_off_e, "gen_pt": events.gen_tau_off_pt,
+                         "gen_eta": events.gen_tau_off_eta,
+                         "gen_phi": events.gen_tau_off_phi,
+                         "lepton_gen_match": events.tau_off_lepton_gen_match, "deepTau_VSjet": events.tau_off_deepTau_VSjet,
+                         "deepTau_VSe": events.tau_off_deepTau_VSe, "deepTau_VSmu": events.tau_off_deepTau_VSmu,
+                         "dz": events.tau_off_dz, "decayModeFinding": events.tau_off_decayModeFinding,
+                         "decayMode": events.tau_off_decayMode,
+                         "idx": ak.local_index(events.tau_off_pt, axis=-1)}
         off_taus = ak.zip(off_taus_dict)
         return off_taus
+
+    def get_trig_taus(self, events=None):
+        if events is None:
+            events = self.get_events()
+        trig_taus_dict = {"e": events.tau_trig_e, "pt": events.tau_trig_pt, "eta": events.tau_trig_eta,
+                         "phi": events.tau_trig_phi,
+                         "idx": ak.local_index(events.tau_trig_pt, axis=-1)}
+        trig_taus = ak.zip(trig_taus_dict)
+        return trig_taus
