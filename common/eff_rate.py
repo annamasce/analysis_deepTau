@@ -54,6 +54,19 @@ def compute_deepTau_eff(tau_1, tau_2, gen_tau_1, gen_tau_2, deepTau_thr, Pt_thr=
 
     return eff, err_low, err_up
 
+def compute_deepTau_ptdep_eff(tau_1, tau_2, gen_tau_1, gen_tau_2, par, Pt_thr=20):
+    """
+    Computes efficiency of di-tau HLT path at a pt dependent deepTau threshold
+    """
+    num_tau_mask_1, num_tau_mask_2, den_tau_mask_1, den_tau_mask_2 = apply_numden_masks(tau_1, tau_2, gen_tau_1, gen_tau_2, Pt_thr=Pt_thr)
+    num_tau_mask_final_1 = deepTau_selection_ptdep(tau_1, Pt_thr, par) & num_tau_mask_1
+    num_tau_mask_final_2 = deepTau_selection_ptdep(tau_2, Pt_thr, par) & num_tau_mask_2
+    Nev_num = ak.sum(ditau_selection(num_tau_mask_final_1, num_tau_mask_final_2))
+    Nev_den = ak.sum(ditau_selection(den_tau_mask_1, den_tau_mask_2))
+    eff, err_low, err_up = compute_eff_witherr(Nev_num, Nev_den)
+
+    return eff, err_low, err_up
+
 
 def compute_deepTau_eff_list(tau_1, tau_2, gen_tau_1, gen_tau_2, thr_list, Pt_thr=20):
     """
@@ -123,6 +136,21 @@ def compute_deepTau_rate(tau_1, tau_2, Nev_den, deepTau_thr, Pt_thr=20, L1rate=7
 
     num_tau_mask_final_1 = deepTau_selection(tau_1, deepTau_thr) & num_tau_mask_1
     num_tau_mask_final_2 = deepTau_selection(tau_2, deepTau_thr) & num_tau_mask_2
+    Nev_num = ak.sum(ditau_selection(num_tau_mask_final_1, num_tau_mask_final_2))
+    rate, err_low, err_up = compute_rate_witherr(Nev_num, Nev_den, is_MC=is_MC, L1rate=L1rate, xs=xs)
+
+    return rate, err_low, err_up
+
+def compute_deepTau_ptdep_rate(tau_1, tau_2, Nev_den, par, Pt_thr=20, L1rate=75817.94, is_MC=False, xs=469700.0):
+    """
+    Computes rate of di-tau HLT path for a pt dependent deepTau thr
+    """
+
+    num_tau_mask_1 = reco_tau_selection(tau_1, minPt=Pt_thr)
+    num_tau_mask_2 = reco_tau_selection(tau_2, minPt=Pt_thr)
+
+    num_tau_mask_final_1 = deepTau_selection_ptdep(tau_1, Pt_thr, par) & num_tau_mask_1
+    num_tau_mask_final_2 = deepTau_selection_ptdep(tau_2, Pt_thr, par) & num_tau_mask_2
     Nev_num = ak.sum(ditau_selection(num_tau_mask_final_1, num_tau_mask_final_2))
     rate, err_low, err_up = compute_rate_witherr(Nev_num, Nev_den, is_MC=is_MC, L1rate=L1rate, xs=xs)
 

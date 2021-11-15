@@ -12,12 +12,11 @@ def iterable(arg):
     )
 
 class Dataset:
-    def __init__(self, fileName, treeName, treeName_gen, is_MC=True, is_old=False):
+    def __init__(self, fileName, treeName, treeName_gen, is_old=False):
         self.fileName = fileName
         self.treeName = treeName
         self.treeName_gen = treeName_gen
         self.is_old = is_old
-        self.is_MC = is_MC
 
     def __define_tree_expression(self, is_gen):
         if is_gen:
@@ -50,12 +49,13 @@ class Dataset:
     def get_taus(self, apply_selection=True):
         events = self.get_events()
         taus_dict = {"e": events.tau_e, "pt": events.tau_pt, "eta": events.tau_eta, "phi": events.tau_phi,
-                     "looseIsoAbs": events.tau_looseIsoAbs, "looseIsoRel": events.tau_looseIsoRel,
-                     "mediumIsoAbs": events.tau_mediumIsoAbs, "mediumIsoRel": events.tau_mediumIsoRel,
-                     "tightIsoAbs": events.tau_tightIsoAbs, "tightIsoRel": events.tau_tightIsoRel,
+                     # "looseIsoAbs": events.tau_looseIsoAbs, "looseIsoRel": events.tau_looseIsoRel,
+                     # "mediumIsoAbs": events.tau_mediumIsoAbs, "mediumIsoRel": events.tau_mediumIsoRel,
+                     # "tightIsoAbs": events.tau_tightIsoAbs, "tightIsoRel": events.tau_tightIsoRel,
                      "gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
                      "gen_phi": events.gen_tau_phi,
-                     "lepton_gen_match": events.lepton_gen_match, "deepTau_VSjet": events.deepTau_VSjet}
+                     "lepton_gen_match": events.lepton_gen_match, "deepTau_VSjet": events.deepTau_VSjet,
+                     "passed_last_filter": events.tau_passedLastFilter}
         if self.is_old:
             taus = ak.zip(taus_dict)
             index = ak.argsort(taus.pt, ascending=False)

@@ -31,6 +31,19 @@ def delta_z(v1, v2):
     dz = v1.vz - v2.vz
     return dz
 
+def deep_thr_lin1(tau, par, Pt_thr):
+    a_1 = (par[1] - par[0]) / (100 - Pt_thr)
+    b_1 = par[1] - 100 * a_1
+    c = 0.125
+    a_2 = (c - par[1]) / 200
+    b_2 = c - 300 * a_2
+
+    thr1 = ak.where(tau.pt < 100, a_1 * tau.pt + b_1, 0)
+    thr2 = ak.where((tau.pt >= 100) & (tau.pt < 300), a_2 * tau.pt + b_2, 0)
+    thr3 = ak.where(tau.pt >= 300, c, 0)
+    deep_thr = thr1 + thr2 + thr3
+    return deep_thr
+
 
 def true_tau_selection(taus):
     tau_mask = taus.lepton_gen_match == 5
@@ -55,6 +68,11 @@ def deepTau_selection(taus, deepTau_thr):
     tau_mask = (true_taus_pred >= deepTau_thr)
     return tau_mask
 
+def deepTau_selection_ptdep(taus, Pt_thr, par):
+    true_taus_pred = taus.deepTau_VSjet  # deepTau prediction for tau vs jets
+    tau_mask = (true_taus_pred >= deep_thr_lin1(taus, par, Pt_thr))
+    return tau_mask
+
 
 def iso_tau_selection(taus, var_abs, var_rel):
     tau_mask = (taus[var_abs] > 0) | (taus[var_rel] > 0)
@@ -63,7 +81,7 @@ def iso_tau_selection(taus, var_abs, var_rel):
 
 def ditau_selection(mask_tau_1, mask_tau_2):
     # require at least one pair of good taus per event
-    ev_mask = ak.sum(mask_tau_1 & mask_tau_2, axis=1) >= 1
+    ev_mask = ak.sum(mask_tau_1 & mask_tau_2, axis=-1) >= 1
     return ev_mask
 
 def L1seed_correction(L1taus, taus):
@@ -103,3 +121,15 @@ def HLTJetPairDzMatchFilter(L2taus):
     # ev_mask = ak.sum(pair_mask, axis=1) > 0
 
     return L2tau_1[pair_mask], L2tau_2[pair_mask]
+
+def DzMatchFilter(tau_1, tau_2):
+    jetMaxDZ = 0.2
+    jetMinDR = 0.5
+    mask_1 = tau_1.passed_last_filter > 0
+    mask_2 = tau_2.passed_last_filter > 0
+    pair_mask = mask_1 & mask_2
+    dr2 = delta_r2(tau_1, tau_2)
+    dz = delta_z(tau_1, tau_2)
+    pair_mask = pair_mask & (dr2 >= jetMinDR * jetMinDR) & (abs(dz) <= jetMaxDZ)
+
+    return tau_1[pair_mask], tau_2[pair_mask]
