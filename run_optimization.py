@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     # load taus from VBF dataset
     dataset_eff = Dataset(fileName_eff, treeName_in, treeName_gen)
-    taus = dataset_eff.get_taus()
+    taus = dataset_eff.get_taupairs()
     tau_leading, tau_subleading = get_leading_pair(taus, 20)
 
     pt_bins = [20, 35, 42, 49, 58, 72, 94, 126, 169, 221, 279, 343, 414, 491]
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     # load taus from HLT physics dataset
     dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen)
-    taus_rates = dataset_rates.get_taus()
+    taus_rates = dataset_rates.get_taupairs()
     tau_1_rates = taus_rates[0]
     tau_2_rates = taus_rates[1]
 

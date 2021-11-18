@@ -32,11 +32,11 @@ colors = ["green", "red", "orange"]
 # get VBF sample
 print("Loading sample for efficiency")
 dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
-taus = dataset_eff.get_taus()
-gen_taus = dataset_eff.get_gen_taus()
+taus = dataset_eff.get_taupairs()
+gen_taus = dataset_eff.get_gen_taupairs()
 
 # get taus before any selection
-original_taus = dataset_eff.get_taus(apply_selection=False)
+original_taus = dataset_eff.get_taupairs(apply_selection=False)
 
 # get sample for rate computation
 print("Loading sample for rate")
@@ -49,14 +49,14 @@ if args.qcd:
         samples = json.load(json_file)
         for key, value in samples.items():
             data = Dataset(data_path + value[0], treeName_in, treeName_gen)
-            QCD_taus_list.append(data.get_taus())
+            QCD_taus_list.append(data.get_taupairs())
             QCD_xs_list.append(value[1])
             QCD_den_list.append(len(data.get_gen_events())) 
     print(QCD_xs_list)
 else:
     # get HLT physics sample
     dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
-    taus_rates = dataset_rates.get_taus()
+    taus_rates = dataset_rates.get_taupairs()
     Nev_den = len(dataset_rates.get_gen_events())
 
 with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
@@ -68,7 +68,7 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
 
         print("Pt threshold:", Pt_thr)
         print("Computing efficiencies")
-        eff_list, eff_err_low, eff_err_up = compute_deepTau_eff_list(taus[0], taus[1], gen_taus[0], gen_taus[1], thr_list, Pt_thr=Pt_thr)
+        eff_list, eff_err_low, eff_err_up = compute_deepTau_eff_list_diTau(taus[0], taus[1], gen_taus[0], gen_taus[1], thr_list, Pt_thr=Pt_thr)
         xerr = np.zeros((2, len(thr_list)))
         xerr[0] = eff_err_low
         xerr[1] = eff_err_up
@@ -80,7 +80,7 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
             rates_err_low = np.zeros(len(thr_list))
             rates_err_up = np.zeros(len(thr_list))
             for i, QCD_taus in enumerate(QCD_taus_list):
-                rates_i, err_i_low, err_i_up = compute_deepTau_rate_list(QCD_taus[0], QCD_taus[1], QCD_den_list[i], thr_list, Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
+                rates_i, err_i_low, err_i_up = compute_deepTau_rate_list_diTau(QCD_taus[0], QCD_taus[1], QCD_den_list[i], thr_list, Pt_thr=Pt_thr, is_MC=True, xs=QCD_xs_list[i])
                 # print(rates_i)
                 rates = np.add(rates, np.square(rates_i))
                 rates_err_low.add(rates_err_low, np.square(err_i_low))
@@ -89,16 +89,16 @@ with PdfPages(plot_path + 'eff_vs_rate_{}.pdf'.format(plot_name)) as pdf:
             rates_err_up = np.sqrt(rates_err_up)
             # print(rates)
         else:
-            rates, rates_err_low, rates_err_up = compute_deepTau_rate_list(taus_rates[0], taus_rates[1], Nev_den, thr_list, Pt_thr=Pt_thr)
+            rates, rates_err_low, rates_err_up = compute_deepTau_rate_list_diTau(taus_rates[0], taus_rates[1], Nev_den, thr_list, Pt_thr=Pt_thr)
         yerr = np.zeros((2, len(thr_list)))
         yerr[0] = rates_err_low
         yerr[1] = rates_err_up
 
         # Compute efficiency before selection
-        eff_initial = compute_base_eff(original_taus[0], original_taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
+        eff_initial = compute_base_eff_diTau(original_taus[0], original_taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
         print("Efficiency before deeptau:", eff_initial)
         # Compute efficiency after L1 matching and dz cut
-        eff_limit = compute_base_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
+        eff_limit = compute_base_eff_diTau(taus[0], taus[1], gen_taus[0], gen_taus[1], Pt_thr=Pt_thr)
         print("Efficiency after L1 matching and dz cut:", eff_limit)
         
         # plot eff vs rate

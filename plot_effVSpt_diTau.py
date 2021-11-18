@@ -40,11 +40,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     plot_name = args.plotName
-    plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/thr_optimisation/"
-    data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/"
-    fileName_eff = "211109/VBFHToTauTau_deepTau.root"
-    fileName_eff_base = "211109/VBFHToTauTau_oldHLT.root"
-    fileName_rates = "211102_deepTau/Ephemeral_deepTau_merged.root"
+    plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/DiTau/"
+    data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/"
+    fileName_eff = "VBFHToTauTau_deepTau.root"
+    fileName_eff_base = "VBFHToTauTau_oldHLT.root"
+    fileName_rates = "Ephemeral_deepTau.root"
     treeName_gen = "gen_counter"
     treeName_in = "final_DiTau_counter"
     treeName_in_base = "final_HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4_counter"
@@ -59,31 +59,31 @@ if __name__ == '__main__':
     # get taus for efficiency
     print("Loading sample for efficiency")
     dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
-    taus = dataset_eff.get_taus(apply_selection=False)
+    taus = dataset_eff.get_taupairs(apply_selection=False)
     taus = DzMatchFilter(taus[0], taus[1])
-    gen_taus = dataset_eff.get_gen_taus()
+    gen_taus = dataset_eff.get_gen_taupairs()
 
     # get taus for old HLT efficiency
     print("Loading sample for old HLT efficiency")
     dataset_eff_base = Dataset(data_path + fileName_eff_base, treeName_in_base, treeName_gen)
-    taus_base = dataset_eff_base.get_taus(apply_selection=False)
+    taus_base = dataset_eff_base.get_taupairs(apply_selection=False)
     print(len(taus_base[0]))
     taus_base = DzMatchFilter(taus_base[0], taus_base[1])
     print(len(taus_base[0]))
-    gen_taus_base = dataset_eff_base.get_gen_taus()
+    gen_taus_base = dataset_eff_base.get_gen_taupairs()
     print(len(gen_taus_base[0]))
 
     # get taus for rates
     print("Loading sample for rate")
     dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
-    taus_rates = dataset_rates.get_taus(apply_selection=False)
+    taus_rates = dataset_rates.get_taupairs(apply_selection=False)
     taus_rates = DzMatchFilter(taus_rates[0], taus_rates[1])
     Nev_den = len(dataset_rates.get_gen_events())
 
     Pt_bins = [20, 25, 30, 35, 40, 45, 50, 60, 70, 100, 200]
     nbins = len(Pt_bins) - 1
     # optim_pars = {35: [0.49948551]}
-    optim_pars = {35: [0.56850701, 0.36850701]}
+    optim_pars = {35: [0.57085716, 0.37163761]}
 
     Pt_thr = 35
 
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     eff_deep = compute_deepTau_ptdep_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], par, Pt_thr=Pt_thr)
     print(eff_deep)
     print("Total rate:")
-    rate_deep = compute_deepTau_ptdep_rate(taus_rates[0], taus_rates[1], Nev_den, par, Pt_thr=Pt_thr,
-                                           L1rate=L1rate_bm)
+    rate_deep = compute_deepTau_ptdep_rate_diTau(taus_rates[0], taus_rates[1], Nev_den, par, Pt_thr=Pt_thr,
+                                                 L1rate=L1rate_bm)
     print(rate_deep)
 

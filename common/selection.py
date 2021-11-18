@@ -133,3 +133,25 @@ def DzMatchFilter(tau_1, tau_2):
     pair_mask = pair_mask & (dr2 >= jetMinDR * jetMinDR) & (abs(dz) <= jetMaxDZ)
 
     return tau_1[pair_mask], tau_2[pair_mask]
+
+def true_other_selection(gen_part):
+    mask = (gen_part.lepton_gen_match == 2) | (gen_part.lepton_gen_match == 4)
+    return mask
+
+def gen_other_selection(gen_part, gen_minPt=24, gen_maxEta=2.1):
+    mask = (gen_part.gen_pt > gen_minPt) & (abs(gen_part.gen_eta) < gen_maxEta)
+    return mask
+
+def evt_base_selection(dataset):
+    gen_events = dataset.get_gen_events()
+    gen_leptons = dataset.get_gen_taus()
+    tau_mask = true_tau_selection(gen_leptons) & gen_tau_selection(gen_leptons)
+    other_mask = true_other_selection(gen_leptons) & gen_other_selection(gen_leptons)
+    ev_mask = (ak.sum(tau_mask, axis=-1) > 0) & (ak.sum(other_mask, axis=-1) > 0)
+    good_events = gen_events[ev_mask].evt
+    return good_events
+
+def good_evt_selection(events, good_events):
+    evt_ids = events.evt
+    matches = [True if ev in good_events else False for ev in evt_ids]
+    return matches
