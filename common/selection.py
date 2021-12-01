@@ -44,6 +44,81 @@ def deep_thr_lin1(tau, par, Pt_thr):
     deep_thr = thr1 + thr2 + thr3
     return deep_thr
 
+def deep_thr_lin1_lowThr(tau, par, Pt_thr):
+    a_1 = (par[1] - par[0]) / (100 - Pt_thr)
+    b_1 = par[1] - 100 * a_1
+    c = 0.05
+    a_2 = (c - par[1]) / 200
+    b_2 = c - 300 * a_2
+
+    thr1 = ak.where(tau.pt < 100, a_1 * tau.pt + b_1, 0)
+    thr2 = ak.where((tau.pt >= 100) & (tau.pt < 300), a_2 * tau.pt + b_2, 0)
+    thr3 = ak.where(tau.pt >= 300, c, 0)
+    deep_thr = thr1 + thr2 + thr3
+    return deep_thr
+
+
+def deep_thr_parab(tau, par, Pt_thr):
+    a_1 = (par[1] - par[0]) / (-10000 - Pt_thr ** 2 + 200 * Pt_thr)
+    b_1 = -200 * a_1
+    c_1 = par[1] - a_1 * 100 ** 2 - b_1 * 100
+
+    c = 0.125
+    a_2 = (c - par[1]) / 200
+    b_2 = c - 300 * a_2
+
+    thr1 = ak.where(tau.pt < 100, a_1 * tau.pt ** 2 + b_1 * tau.pt + c_1, 0)
+    thr2 = ak.where((tau.pt >= 100) & (tau.pt < 300), a_2 * tau.pt + b_2, 0)
+    thr3 = ak.where(tau.pt >= 300, c, 0)
+    deep_thr = thr1 + thr2 + thr3
+    return deep_thr
+
+
+def deep_thr_lin2(tau, par, Pt_thr):
+    c = 0.125
+    m = (c - par[0]) / (300 - Pt_thr)
+    q = c - m * 300
+    thr1 = ak.where((tau.pt < 300), m * tau.pt + q, 0)
+    thr2 = ak.where(tau.pt >= 300, c, 0)
+    deep_thr = thr1 + thr2
+    return deep_thr
+
+def deep_thr_lin2_tauMET(tau, par, Pt_thr):
+    c = 0.8
+    m = (c - par[0]) / (300 - Pt_thr)
+    q = c - m * 300
+    thr1 = ak.where((tau.pt < 300), m * tau.pt + q, 0)
+    thr2 = ak.where(tau.pt >= 300, c, 0)
+    deep_thr = thr1 + thr2
+    return deep_thr
+
+def deep_thr_lin2_highPt(tau, par, Pt_thr, Pt_step=300):
+    c = 0.125
+    m = (c - par[0]) / (Pt_step - Pt_thr)
+    q = c - m * Pt_step
+    thr1 = ak.where((tau.pt < Pt_step), m * tau.pt + q, 0)
+    thr2 = ak.where(tau.pt >= Pt_step, c, 0)
+    deep_thr = thr1 + thr2
+    return deep_thr
+
+def deep_thr_lin1_tauMET(tau, par, Pt_thr):
+    a_1 = (par[1] - par[0]) / (300 - Pt_thr)
+    b_1 = par[1] - 300 * a_1
+    c = 0.5
+    a_2 = (c - par[1]) / 200
+    b_2 = c - 500 * a_2
+
+    thr1 = ak.where(tau.pt < 300, a_1 * tau.pt + b_1, 0)
+    thr2 = ak.where((tau.pt >= 300) & (tau.pt < 500), a_2 * tau.pt + b_2, 0)
+    thr3 = ak.where(tau.pt >= 500, c, 0)
+    deep_thr = thr1 + thr2 + thr3
+    return deep_thr
+
+def deep_thr_const(tau, par, Pt_thr):
+    c = par[0]
+    thr = ak.where(tau.pt > Pt_thr, c, 0)
+    return thr
+
 
 def true_tau_selection(taus):
     tau_mask = taus.lepton_gen_match == 5
@@ -68,9 +143,9 @@ def deepTau_selection(taus, deepTau_thr):
     tau_mask = (true_taus_pred >= deepTau_thr)
     return tau_mask
 
-def deepTau_selection_ptdep(taus, Pt_thr, par):
+def deepTau_selection_ptdep(taus, Pt_thr, par, deep_thr):
     true_taus_pred = taus.deepTau_VSjet  # deepTau prediction for tau vs jets
-    tau_mask = (true_taus_pred >= deep_thr_lin1(taus, par, Pt_thr))
+    tau_mask = (true_taus_pred >= deep_thr(taus, par, Pt_thr))
     return tau_mask
 
 
@@ -149,9 +224,10 @@ def evt_base_selection(dataset):
     other_mask = true_other_selection(gen_leptons) & gen_other_selection(gen_leptons)
     ev_mask = (ak.sum(tau_mask, axis=-1) > 0) & (ak.sum(other_mask, axis=-1) > 0)
     good_events = gen_events[ev_mask].evt
-    return good_events
+    return ak.to_numpy(good_events, False)
 
 def good_evt_selection(events, good_events):
-    evt_ids = events.evt
-    matches = [True if ev in good_events else False for ev in evt_ids]
+    evt_ids = ak.to_numpy(events.evt, False)
+    matches = np.isin(evt_ids, good_events)
+    # matches = [True if ev in good_events else False for ev in evt_ids]
     return matches

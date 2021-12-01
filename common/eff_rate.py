@@ -49,8 +49,12 @@ def compute_base_eff_singleTau(dataset, Pt_thr=20):
     gen_taus = dataset.get_gen_taus()
     num_tau_mask = (taus.passed_last_filter > 0) & num_mask_eff(taus, Pt_thr=Pt_thr)
     den_tau_mask = den_mask_eff(gen_taus)
-    num_evt_mask = (ak.sum(num_tau_mask, axis=-1) > 0) & good_evt_selection(dataset.get_events(), good_events)
-    den_evt_mask = (ak.sum(den_tau_mask, axis=-1) > 0) & good_ev_mask
+    if dataset.type in ["TauMET", "HighPtTau"]:
+        num_evt_mask = (ak.sum(num_tau_mask, axis=-1) == 1) & good_evt_selection(dataset.get_events(), good_events)
+        den_evt_mask = (ak.sum(den_tau_mask, axis=-1) == 1) #& good_ev_mask
+    else:
+        num_evt_mask = (ak.sum(num_tau_mask, axis=-1) > 0) & good_evt_selection(dataset.get_events(), good_events)
+        den_evt_mask = (ak.sum(den_tau_mask, axis=-1) > 0) & good_ev_mask
     Nev_num = ak.sum(num_evt_mask)
     print(Nev_num)
     Nev_den = ak.sum(den_evt_mask)
@@ -72,13 +76,13 @@ def compute_deepTau_eff_diTau(tau_1, tau_2, gen_tau_1, gen_tau_2, deepTau_thr, P
 
     return eff, err_low, err_up
 
-def compute_deepTau_ptdep_eff(tau_1, tau_2, gen_tau_1, gen_tau_2, par, Pt_thr=20):
+def compute_deepTau_ptdep_eff(tau_1, tau_2, gen_tau_1, gen_tau_2, par, deep_thr, Pt_thr=20):
     """
     Computes efficiency of di-tau HLT path at a pt dependent deepTau threshold
     """
     num_tau_mask_1, num_tau_mask_2, den_tau_mask_1, den_tau_mask_2 = apply_numden_masks(tau_1, tau_2, gen_tau_1, gen_tau_2, Pt_thr=Pt_thr)
-    num_tau_mask_final_1 = deepTau_selection_ptdep(tau_1, Pt_thr, par) & num_tau_mask_1
-    num_tau_mask_final_2 = deepTau_selection_ptdep(tau_2, Pt_thr, par) & num_tau_mask_2
+    num_tau_mask_final_1 = deepTau_selection_ptdep(tau_1, Pt_thr, par, deep_thr) & num_tau_mask_1
+    num_tau_mask_final_2 = deepTau_selection_ptdep(tau_2, Pt_thr, par, deep_thr) & num_tau_mask_2
     Nev_num = ak.sum(ditau_selection(num_tau_mask_final_1, num_tau_mask_final_2))
     Nev_den = ak.sum(ditau_selection(den_tau_mask_1, den_tau_mask_2))
     eff, err_low, err_up = compute_eff_witherr(Nev_num, Nev_den)
@@ -117,8 +121,12 @@ def compute_deepTau_eff_list_singleTau(dataset, thr_list, Pt_thr=20):
     gen_taus = dataset.get_gen_taus()
     num_tau_mask = (taus.passed_last_filter > 0) & num_mask_eff(taus, Pt_thr=Pt_thr)
     den_tau_mask = den_mask_eff(gen_taus)
-    num_evt_mask = (ak.sum(num_tau_mask, axis=-1) > 0) & good_evt_selection(dataset.get_events(), good_events)
-    den_evt_mask = (ak.sum(den_tau_mask, axis=-1) > 0) & good_ev_mask
+    if dataset.type in ["TauMET", "HighPtTau"]:
+        num_evt_mask = (ak.sum(num_tau_mask, axis=-1) == 1) & good_evt_selection(dataset.get_events(), good_events)
+        den_evt_mask = (ak.sum(den_tau_mask, axis=-1) == 1) #& good_ev_mask
+    else:
+        num_evt_mask = (ak.sum(num_tau_mask, axis=-1) > 0) & good_evt_selection(dataset.get_events(), good_events)
+        den_evt_mask = (ak.sum(den_tau_mask, axis=-1) > 0) & good_ev_mask
     Nev_den = ak.sum(den_evt_mask)
 
     eff_list = []
@@ -127,7 +135,7 @@ def compute_deepTau_eff_list_singleTau(dataset, thr_list, Pt_thr=20):
 
     for thr in thr_list:
         num_tau_mask_final = deepTau_selection(taus, thr) & num_tau_mask
-        num_evt_mask_final = num_evt_mask & ak.sum(num_tau_mask_final, axis=-1) > 0
+        num_evt_mask_final = num_evt_mask & (ak.sum(num_tau_mask_final, axis=-1) > 0)
         Nev_num = ak.sum(num_evt_mask_final)
         eff, err_low, err_up = compute_eff_witherr(Nev_num, Nev_den)
         eff_list.append(eff)
@@ -198,7 +206,7 @@ def compute_deepTau_rate_singleTau(taus, Nev_den, deepTau_thr, Pt_thr=20, L1rate
 
     return rate, err_low, err_up
 
-def compute_deepTau_ptdep_rate_diTau(tau_1, tau_2, Nev_den, par, Pt_thr=20, L1rate=75817.94, is_MC=False, xs=469700.0):
+def compute_deepTau_ptdep_rate_diTau(tau_1, tau_2, Nev_den, par, deep_thr, Pt_thr=20, L1rate=75817.94, is_MC=False, xs=469700.0):
     """
     Computes rate of di-tau HLT path for a pt dependent deepTau thr
     """
@@ -206,19 +214,19 @@ def compute_deepTau_ptdep_rate_diTau(tau_1, tau_2, Nev_den, par, Pt_thr=20, L1ra
     num_tau_mask_1 = reco_tau_selection(tau_1, minPt=Pt_thr)
     num_tau_mask_2 = reco_tau_selection(tau_2, minPt=Pt_thr)
 
-    num_tau_mask_final_1 = deepTau_selection_ptdep(tau_1, Pt_thr, par) & num_tau_mask_1
-    num_tau_mask_final_2 = deepTau_selection_ptdep(tau_2, Pt_thr, par) & num_tau_mask_2
+    num_tau_mask_final_1 = deepTau_selection_ptdep(tau_1, Pt_thr, par, deep_thr) & num_tau_mask_1
+    num_tau_mask_final_2 = deepTau_selection_ptdep(tau_2, Pt_thr, par, deep_thr) & num_tau_mask_2
     Nev_num = ak.sum(ditau_selection(num_tau_mask_final_1, num_tau_mask_final_2))
     rate, err_low, err_up = compute_rate_witherr(Nev_num, Nev_den, is_MC=is_MC, L1rate=L1rate, xs=xs)
 
     return rate, err_low, err_up
 
-def compute_deepTau_ptdep_rate_singleTau(taus, Nev_den, par, Pt_thr=20, L1rate=75817.94):
+def compute_deepTau_ptdep_rate_singleTau(taus, Nev_den, par, deep_thr,  Pt_thr=20, L1rate=75817.94):
     """
     Computes rate of single-tau HLT path for a pt dependent deepTau thr
     """
 
-    num_tau_mask = reco_tau_selection(taus, minPt=Pt_thr) & deepTau_selection_ptdep(taus, Pt_thr, par)
+    num_tau_mask = reco_tau_selection(taus, minPt=Pt_thr) & deepTau_selection_ptdep(taus, Pt_thr, par, deep_thr)
     Nev_num = ak.sum(ak.sum(num_tau_mask, axis=-1) > 0)
     rate, err_low, err_up = compute_rate_witherr(Nev_num, Nev_den, L1rate=L1rate)
 

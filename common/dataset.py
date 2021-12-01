@@ -88,13 +88,19 @@ class Dataset:
         gen_tau_1, gen_tau_2 = ak.unzip(ak.combinations(gen_taus, 2, axis=1))
         return gen_tau_1, gen_tau_2
 
-    def get_MET(self):
+    def get_met(self):
         events = self.get_events()
         MET_dict = {"e": events.MET_e, "pt": events.MET_pt, "eta": events.MET_eta, "phi": events.MET_phi}
         METs = ak.zip(MET_dict)
         index = ak.argsort(METs.pt, ascending=False)
         METs = METs[index]
         return METs
+
+    def get_gen_met(self):
+        events = self.get_gen_events()
+        gen_met_dict = {"gen_pt": events.gen_met_calo_pt, "gen_phi": events.gen_met_calo_phi}
+        gen_met = ak.zip(gen_met_dict)
+        return gen_met
 
     def evt_base_selection(self):
         gen_events = self.get_gen_events()
@@ -110,13 +116,18 @@ class Dataset:
             gen_mask = (gen_leptons.gen_pt > 20) & (abs(gen_leptons.gen_eta) < 2.1)
             other_mask = truth_mask & gen_mask
             ev_mask = (ak.sum(tau_mask, axis=-1) > 0) & (ak.sum(other_mask, axis=-1) > 0)
-        elif self.type in ["TauMET", "HighPtTau"]:
+        elif self.type == "HighPtTau":
             ev_mask = (ak.sum(tau_mask, axis=-1) == 1)
+        elif self.type == "TauMET":
+            gen_met = self.get_gen_met()
+            gen_met_mask = (gen_met.gen_pt > 100)
+            ev_mask = (ak.sum(tau_mask, axis=-1) == 1) & (ak.sum(gen_met_mask, axis=-1) > 0)
         elif self.type == "DiTau":
             ev_mask = (ak.sum(tau_mask, axis=-1) > 1)
         else:
             sys.exit("Wrong dataset type. choose one of the following: EleTau, MuTau, TauMET, HighPtTau, DiTau")
         good_events = gen_events[ev_mask].evt
+        good_events = ak.to_numpy(good_events, False)
         print(good_events)
         return ev_mask, good_events
 

@@ -1,3 +1,6 @@
+from common.selection import *
+from functools import partial
+
 paths = {
     "DiTau": "HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4",
     "EleTau": "HLT_Ele24_eta2p1_WPTight_Gsf_MediumChargedIsoPFTauHPS30_eta2p1_CrossL1_v1",
@@ -7,11 +10,14 @@ paths = {
 }
 
 optim_pars_paths = {
-    "DiTau": [0.57085716, 0.37163761],
-    "EleTau": [0.78537964, 0.5286338],
-    "MuTau": [0.46743955, 0.3611882],
-    "TauMET": [0.5, 0.4],
-    "HighPtTau": [0.5, 0.4]
+    "DiTau": [deep_thr_lin1, [0.57085716, 0.37163761]],
+    "EleTau": [deep_thr_lin1, [0.78537964, 0.5286338]],
+    # "EleTau": [deep_thr_lin1, [0.77, 0.6]],
+    # "MuTau": [deep_thr_lin1, [0.46743955, 0.3611882]],
+    "MuTau": [deep_thr_lin1_lowThr, [0.48133268, 0.31975578]],
+    # "TauMET": [deep_thr_lin1_tauMET, [0.97836487, 0.90928622]],
+    "TauMET": [deep_thr_lin1_tauMET, [0.96245395, 0.945]],
+    "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.65320599]]
 }
 
 rate_bm_paths = {

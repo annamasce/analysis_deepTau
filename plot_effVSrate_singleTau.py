@@ -11,13 +11,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("plotName", help="name of the pdf plot")
 parser.add_argument("datasetType", help="dataset type to identify proper generator selection for efficiency")
 args = parser.parse_args()
-if args.datasetType not in ["EleTau", "MuTau", "DiTau"]:
+if args.datasetType not in ["EleTau", "MuTau", "DiTau", "HighPtTau", "TauMET"]:
     sys.exit("Wrong dataset type. choose one of the following: EleTau, MuTau, TauMET, HighPtTau, DiTau")
 
 plot_name = args.plotName
 plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/"
 data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/"
-fileName_eff = "VBFHToTauTau_deepTau.root"
+fileName_eff = "ZprimeToTauTau_deepTau.root"
 fileName_rates = "Ephemeral_deepTau.root"
 treeName_gen = "gen_counter"
 treeName_in = "final_{}_counter".format(args.datasetType)
@@ -39,7 +39,7 @@ taus_rates = dataset_rates.get_taus()
 taus_rates = taus_rates[taus_rates.passed_last_filter > 0]
 Nev_den = len(dataset_rates.get_gen_events())
 
-fileName_eff_base = "VBFHToTauTau_oldHLT.root"
+fileName_eff_base = "ZprimeToTauTau_oldHLT.root"
 fileName_rates_base = "Ephemeral_oldHLT.root"
 treeName_gen_base = "gen_counter"
 treeName_in_base = "final_{}_counter".format(paths[args.datasetType])

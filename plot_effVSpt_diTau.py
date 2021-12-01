@@ -92,8 +92,8 @@ if __name__ == '__main__':
     num_tau_mask_1, num_tau_mask_2, den_tau_mask_1, den_tau_mask_2 = apply_numden_masks(taus[0], taus[1],
                                                                                         gen_taus[0], gen_taus[1],
                                                                                         Pt_thr=Pt_thr)
-    num_tau_mask_deepTau_1 = deepTau_selection_ptdep(taus[0], Pt_thr, par) & num_tau_mask_1
-    num_tau_mask_deepTau_2 = deepTau_selection_ptdep(taus[1], Pt_thr, par) & num_tau_mask_2
+    num_tau_mask_deepTau_1 = deepTau_selection_ptdep(taus[0], Pt_thr, par, deep_thr) & num_tau_mask_1
+    num_tau_mask_deepTau_2 = deepTau_selection_ptdep(taus[1], Pt_thr, par, deep_thr) & num_tau_mask_2
     num_pair_mask = num_tau_mask_deepTau_1 & num_tau_mask_deepTau_2
     num_ev_mask = ditau_selection(num_tau_mask_deepTau_1, num_tau_mask_deepTau_2)
     # take only leading pair
