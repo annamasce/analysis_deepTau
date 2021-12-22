@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import math
+import argparse
 
 
 def true_taus_selected(taus, Pt_thr):
@@ -111,12 +112,12 @@ def run_optimization(taus, taus_rates, Pt_thr, deep_thr, Nev_den, L1rate):
 
     def f(a):
         rate = compute_rate(taus_rates[0], taus_rates[1], Nev_den, Pt_thr, a, L1rate, deep_thr)
-        print(a, "\trate\t:", rate)
         eff_algo, _, _ = compute_eff_algo(taus_selected[0], taus_selected[1], a, Pt_thr, deep_thr)
+        print(a, "\trate\t:", rate, "\teff\t:", eff_algo)
         return - eff_algo + loss(rate)
 
     # res = minimize(f, [0.7, 0.7], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.001})
-    res = minimize(f, [0.57163761, 0.37163761], bounds=((0.125, 1), (0.125, 1)), method="L-BFGS-B", options={"eps": 0.0001})
+    res = minimize(f, [0.571, 0.453], bounds=((0.125, 1), (0.125, 1)), method="L-BFGS-B", options={"eps": 0.001})
     # res = minimize(f, [0.7], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 
     print("Optimized parameters:", res.x)
@@ -172,20 +173,25 @@ def plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr, optim_x, label):
 
 if __name__ == '__main__':
 
-    tag = "all"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("tag", help="Tag of the pdf files with plots to be created")
+    parser.add_argument("plotPath", help="Path of pdf files with plots to be created")
+    args = parser.parse_args()
+
+    tag = args.tag
 
     # deepTau eff dataset
-    fileName = ["/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/VBFHToTauTau_deepTau.root",
-                "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/ZprimeToTauTau_deepTau.root"]
+    fileName = ["/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211220/VBFHToTauTau_deepTau.root",
+                "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211220/ZprimeToTauTau_deepTau.root"]
     treeName_in = "final_DiTau_counter"
     treeName_gen = "gen_counter"
-    dataset_eff = Dataset(fileName, treeName_in, treeName_gen)
+    dataset_eff = Dataset(fileName, treeName_in, treeName_gen, type="DiTau", apply_l2=True)
     taus = dataset_eff.get_taupairs(apply_selection=False)
     taus = DzMatchFilter(taus[0], taus[1])
 
     # deepTau rate dataset
-    fileName_rates = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/Ephemeral_deepTau.root"
-    dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen)
+    fileName_rates = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211220/Ephemeral_deepTau.root"
+    dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen, type="DiTau", apply_l2=True)
     taus_rates = dataset_rates.get_taupairs(apply_selection=False)
     taus_rates = DzMatchFilter(taus_rates[0], taus_rates[1])
     Nev_den = len(dataset_rates.get_gen_events())
@@ -195,27 +201,24 @@ if __name__ == '__main__':
     L1rate_bm = L1rate * lumi_bm / lumi_real
 
     pt_bins = [35, 40, 45, 50, 60, 70, 100, 150, 200, 250, 300, 400, 600]
-    eff_base = np.zeros([3, len(pt_bins)])
-    optim_res = []
     fig, ax = plt.subplots()
 
     Pt_thr = 35
-    # optim_x = run_optimization(taus, taus_rates, Pt_thr, deep_thr_lin1, Nev_den, L1rate_bm)
-    # optim_res.append(optim_x)
-    # plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr_lin1, optim_x, tag)
-    # plt.legend()
-    # # plt.savefig("algo_eff_flatten_{}.pdf".format(tag))
-    # plt.show()
-    # # plt.close()
-
-    func_dictionary = {
-        "lin model 1": [deep_thr_lin1, [0.57085716, 0.37163761]],
-        "lin model 2": [deep_thr_lin2, [0.54034784]],
-        "parab model": [deep_thr_parab, [0.59785017, 0.39570033]]
-    }
-
-    for func in func_dictionary:
-        plot_algo_eff_singleTau(taus, pt_bins, ax, func_dictionary[func][0], func_dictionary[func][1], func)
+    optim_x = run_optimization(taus, taus_rates, Pt_thr, deep_thr_lin1, Nev_den, L1rate_bm)
+    plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr_lin1, optim_x, tag)
     plt.legend()
-    plt.savefig("plots/DiTau/algo_eff_flatten_{}.pdf".format(tag))
-    plt.close()
+    # plt.savefig("algo_eff_flatten_{}.pdf".format(tag))
+    plt.show()
+    # plt.close()
+
+    # func_dictionary = {
+    #     "lin model 1": [deep_thr_lin1, [0.5207, 0.3357]],
+    #     # "lin model 2": [deep_thr_lin2, [0.54034784]],
+    #     # "parab model": [deep_thr_parab, [0.59785017, 0.39570033]]
+    # }
+    #
+    # for func in func_dictionary:
+    #     plot_algo_eff_singleTau(taus, pt_bins, ax, func_dictionary[func][0], func_dictionary[func][1], func)
+    # plt.legend()
+    # plt.savefig(args.plotPath + "/algo_eff_flatten_{}.pdf".format(tag))
+    # plt.close()

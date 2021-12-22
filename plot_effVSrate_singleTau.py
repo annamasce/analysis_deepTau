@@ -16,9 +16,9 @@ if args.datasetType not in ["EleTau", "MuTau", "DiTau", "HighPtTau", "TauMET"]:
 
 plot_name = args.plotName
 plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/"
-data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/"
-fileName_eff = "ZprimeToTauTau_deepTau.root"
-fileName_rates = "Ephemeral_deepTau.root"
+data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/"
+fileName_eff = "211130/WjetsToLNu_deepTau.root"
+fileName_rates = "211130/Ephemeral_deepTau.root"
 treeName_gen = "gen_counter"
 treeName_in = "final_{}_counter".format(args.datasetType)
 
@@ -26,7 +26,7 @@ Pt_thr_list = [Pt_thr_paths[args.datasetType]]
 
 # get VBF sample
 print("Loading sample for efficiency")
-dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen, type=args.datasetType)
+dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen, type=args.datasetType, apply_l2=True)
 taus = dataset_eff.get_taus()
 taus = taus[taus.passed_last_filter > 0]
 print(taus.pt)
@@ -34,13 +34,13 @@ gen_taus = dataset_eff.get_gen_taus()
 
 # get HLT physics sample
 print("Loading sample for rate")
-dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen, type=args.datasetType)
+dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen, type=args.datasetType, apply_l2=True)
 taus_rates = dataset_rates.get_taus()
 taus_rates = taus_rates[taus_rates.passed_last_filter > 0]
 Nev_den = len(dataset_rates.get_gen_events())
 
-fileName_eff_base = "ZprimeToTauTau_oldHLT.root"
-fileName_rates_base = "Ephemeral_oldHLT.root"
+fileName_eff_base = "211109/WjetsToLNu_oldHLT.root"
+fileName_rates_base = "211109/Ephemeral_oldHLT.root"
 treeName_gen_base = "gen_counter"
 treeName_in_base = "final_{}_counter".format(paths[args.datasetType])
 

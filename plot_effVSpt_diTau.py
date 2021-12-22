@@ -8,6 +8,7 @@ from common.selection import *
 from common.eff_rate import *
 from common.dataset import Dataset
 from common.selection import DzMatchFilter
+from HLT_paths import paths, optim_pars_paths, Pt_thr_paths
 
 
 def set_eff2Dhist_style(hist, Pt_thr, Pt_max, cut_based = False):
@@ -19,7 +20,7 @@ def set_eff2Dhist_style(hist, Pt_thr, Pt_max, cut_based = False):
     hist.GetYaxis().SetTitle("gen p_{T} subleading tau [GeV]")
     hist.GetXaxis().SetMoreLogLabels(kTRUE)
     hist.GetYaxis().SetMoreLogLabels(kTRUE)
-    hist.GetYaxis().SetTitleOffset(1.2)
+    hist.GetYaxis().SetTitleOffset(1.3)
     hist.GetXaxis().SetTitleOffset(1.2)
     if Pt_thr==20:
         hist.GetXaxis().SetRangeUser(Pt_thr, Pt_max)
@@ -41,13 +42,19 @@ if __name__ == '__main__':
 
     plot_name = args.plotName
     plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/DiTau/"
-    data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/"
-    fileName_eff = "VBFHToTauTau_deepTau.root"
-    fileName_eff_base = "VBFHToTauTau_oldHLT.root"
-    fileName_rates = "Ephemeral_deepTau.root"
+    data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/"
+    fileName_eff_1 = "211213/VBFHToTauTau_deepTau.root"
+    fileName_eff_2 = "211213/ZprimeToTauTau_deepTau.root"
+    fileName_eff_base_1 = "211109/VBFHToTauTau_oldHLT.root"
+    fileName_eff_base_2 = "211109/ZprimeToTauTau_oldHLT.root"
+    fileName_rates = "211213/Ephemeral_deepTau.root"
     treeName_gen = "gen_counter"
     treeName_in = "final_DiTau_counter"
     treeName_in_base = "final_HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4_counter"
+
+    # Create root file to save efficiency histograms
+    hfile = TFile('{}RootFiles/histos_{}.root'.format(plot_path, plot_name), 'RECREATE',
+                  'ROOT file with histograms')
 
 
     # L1 rate
@@ -58,14 +65,16 @@ if __name__ == '__main__':
 
     # get taus for efficiency
     print("Loading sample for efficiency")
-    dataset_eff = Dataset(data_path + fileName_eff, treeName_in, treeName_gen)
+    files_eff = [data_path + fileName_eff_1, data_path + fileName_eff_2]
+    dataset_eff = Dataset(files_eff, treeName_in, treeName_gen, type="DiTau", apply_l2=True)
     taus = dataset_eff.get_taupairs(apply_selection=False)
     taus = DzMatchFilter(taus[0], taus[1])
     gen_taus = dataset_eff.get_gen_taupairs()
 
     # get taus for old HLT efficiency
     print("Loading sample for old HLT efficiency")
-    dataset_eff_base = Dataset(data_path + fileName_eff_base, treeName_in_base, treeName_gen)
+    files_eff_base = [data_path + fileName_eff_base_1, data_path + fileName_eff_base_2]
+    dataset_eff_base = Dataset(files_eff_base, treeName_in_base, treeName_gen, type="DiTau", apply_l2=False)
     taus_base = dataset_eff_base.get_taupairs(apply_selection=False)
     print(len(taus_base[0]))
     taus_base = DzMatchFilter(taus_base[0], taus_base[1])
@@ -75,20 +84,21 @@ if __name__ == '__main__':
 
     # get taus for rates
     print("Loading sample for rate")
-    dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen)
+    dataset_rates = Dataset(data_path + fileName_rates, treeName_in, treeName_gen, type="DiTau", apply_l2=True)
     taus_rates = dataset_rates.get_taupairs(apply_selection=False)
     taus_rates = DzMatchFilter(taus_rates[0], taus_rates[1])
     Nev_den = len(dataset_rates.get_gen_events())
+    print(Nev_den)
 
-    Pt_bins = [20, 25, 30, 35, 40, 45, 50, 60, 70, 100, 200]
+    # Pt_bins = [20, 25, 30, 35, 40, 50, 60, 70, 100, 200, 500, 1000]
+    Pt_bins = [35, 50, 100, 200, 500, 2000]
     nbins = len(Pt_bins) - 1
     # optim_pars = {35: [0.49948551]}
-    optim_pars = {35: [0.57085716, 0.37163761]}
-
-    Pt_thr = 35
+    par = optim_pars_paths["DiTau"][1]
+    deep_thr = optim_pars_paths["DiTau"][0]
+    Pt_thr = Pt_thr_paths["DiTau"]
 
     print("Plotting differential efficiency vs gen Pt")
-    par = optim_pars[Pt_thr]
     num_tau_mask_1, num_tau_mask_2, den_tau_mask_1, den_tau_mask_2 = apply_numden_masks(taus[0], taus[1],
                                                                                         gen_taus[0], gen_taus[1],
                                                                                         Pt_thr=Pt_thr)
@@ -133,7 +143,7 @@ if __name__ == '__main__':
 
     drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_" + plot_name + ".pdf")
 
-    if Pt_thr==35:
+    if Pt_thr == 35:
         num_tau_mask_1, num_tau_mask_2, den_tau_mask_1, den_tau_mask_2 = apply_numden_masks(taus_base[0], taus_base[1],
                                                                                             gen_taus_base[0], gen_taus_base[1],
                                                                                             Pt_thr=Pt_thr)
@@ -174,11 +184,13 @@ if __name__ == '__main__':
         eff_hist_2D_base.Draw("colz text")
         drawCanv_2d.Print(plot_path + "diffeff_VSgenPt2D_base_" + plot_name + ".pdf")
 
+    hfile.Write()
+
     print("Total efficiency:")
-    eff_deep = compute_deepTau_ptdep_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], par, Pt_thr=Pt_thr)
+    eff_deep = compute_deepTau_ptdep_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], par, deep_thr, Pt_thr=Pt_thr)
     print(eff_deep)
     print("Total rate:")
-    rate_deep = compute_deepTau_ptdep_rate_diTau(taus_rates[0], taus_rates[1], Nev_den, par, Pt_thr=Pt_thr,
+    rate_deep = compute_deepTau_ptdep_rate_diTau(taus_rates[0], taus_rates[1], Nev_den, par, deep_thr, Pt_thr=Pt_thr,
                                                  L1rate=L1rate_bm)
     print(rate_deep)
 

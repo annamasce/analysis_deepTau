@@ -54,17 +54,23 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("plotName", help="name of the pdf plot")
     parser.add_argument("datasetType", help="dataset type to identify proper generator selection for efficiency")
+    parser.add_argument("--remove_l2", help="apply L2 filter", action="store_true")
+    parser.add_argument("--optimise_VSe", help="optimise deepTau VSe thr", action="store_true")
     args = parser.parse_args()
+    apply_l2 = not args.remove_l2
     if args.datasetType not in ["EleTau", "MuTau", "DiTau", "TauMET", "HighPtTau"]:
         sys.exit("Wrong dataset type. choose one of the following: EleTau, MuTau, TauMET, HighPtTau, DiTau")
 
     plot_name = args.plotName
     plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/"
-    data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/"
-    fileName_rates = data_path + "Ephemeral_deepTau.root"
+    data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/"
+    fileName_rates = data_path + "211213/Ephemeral_deepTau.root"
     treeName_gen = "gen_counter"
     treeName_in = "final_{}_counter".format(args.datasetType)
     treeName_in_base = "final_{}_counter".format(paths[args.datasetType])
+
+    # Create root file to save efficiency histograms
+    hfile = TFile('{}/{}/RootFiles/histos_{}.root'.format(plot_path, args.datasetType, plot_name), 'RECREATE', 'ROOT file with histograms')
 
     # L1 rate
     L1rate = 75817.94
@@ -74,17 +80,23 @@ if __name__ == '__main__':
 
     # get taus for efficiency
     print("Loading sample for efficiency")
-    datasets_eff = [Dataset(data_path + "ZprimeToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType), Dataset(data_path + "VBFHToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType)]
-    # datasets_eff = [Dataset(data_path + "WjetsToLNu_deepTau.root", treeName_in, treeName_gen, type=args.datasetType)]
+    datasets_eff = [Dataset(data_path + "211213/ZprimeToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2), Dataset(data_path + "211213/VBFHToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2)]
+    # datasets_eff = [
+    #     # Dataset(data_path + "211213/ZprimeToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType,
+    #     #         apply_l2=apply_l2),
+    #     # Dataset(data_path + "211213/VBFHToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType,
+    #     #         apply_l2=apply_l2),
+    #     Dataset(data_path + "211213/WjetsToLNu_deepTau.root", treeName_in, treeName_gen, type=args.datasetType,
+    #             apply_l2=apply_l2)]
 
     # get taus for old HLT efficiency
     print("Loading sample for old HLT efficiency")
-    datasets_eff_base = [Dataset(data_path + "ZprimeToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType), Dataset(data_path + "VBFHToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType)]
-    # datasets_eff_base = [Dataset(data_path + "WjetsToLNu_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType)]
+    datasets_eff_base = [Dataset(data_path + "211109/ZprimeToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType), Dataset(data_path + "211109/VBFHToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType)]
+    # datasets_eff_base = [Dataset(data_path + "211109/WjetsToLNu_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType)]
 
     # get taus for rates
     print("Loading sample for rate")
-    dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen, type=args.datasetType)
+    dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2)
     taus_rates = dataset_rates.get_taus()
     taus_rates = taus_rates[taus_rates.passed_last_filter > 0]
     Nev_den = len(dataset_rates.get_gen_events())
@@ -92,14 +104,17 @@ if __name__ == '__main__':
     par = optim_pars_paths[args.datasetType][1]
     deep_thr = optim_pars_paths[args.datasetType][0]
     Pt_thr = Pt_thr_paths[args.datasetType]
-    # Pt_bins = [Pt_thr, 35, 40, 45, 50, 60, 70, 100, 200, 500, 700, 1000, 2000]
-    Pt_bins = [Pt_thr, 200, 250, 300, 400, 500, 700, 1000, 2000, 5000]
-    # Pt_bins = [Pt_thr, 60, 70, 100, 150, 200]
+    Pt_bins = [Pt_thr, 35, 40, 45, 50, 60, 70, 100, 200, 500, 700, 1000, 2000]
+    # Pt_bins = [Pt_thr, 200, 250, 300, 400, 500, 700, 1000, 2000, 5000]
+    # Pt_bins = [Pt_thr, 60, 70, 100, 150, 300]
     nbins = len(Pt_bins) - 1
 
     print("Plotting differential efficiency vs gen Pt")
     taus_num, taus_den = taus_preselected(datasets_eff, Pt_thr)
-    deepTau_mask = deepTau_selection_ptdep(taus_num, Pt_thr, par, deep_thr)
+    if args.optimise_VSe:
+        deepTau_mask = deepTau_selection_ptdep(taus_num, Pt_thr, par[1:], deep_thr) & (taus_num.deepTau_VSe > par[0])
+    else:
+        deepTau_mask = deepTau_selection_ptdep(taus_num, Pt_thr, par, deep_thr)
     taus_num = (taus_num[deepTau_mask])[ak.sum(deepTau_mask, axis=-1) > 0]
     tau_num = ak.firsts(taus_num)
     tau_den = ak.firsts(taus_den)
@@ -151,19 +166,18 @@ if __name__ == '__main__':
     eff_hist_1D_base.SetMarkerColor(2)
     eff_hist_1D_base.SetLineColor(2)
     eff_hist_1D_base.Draw("PE1 same")
-    legend = TLegend(0.15, 0.7, 0.4, 0.85)
+    legend = TLegend(0.55, 0.15, 0.85, 0.3)
+    # legend = TLegend(0.15, 0.7, 0.4, 0.85)
     legend.AddEntry(eff_hist_1D, "DeepTau benchmark")
     legend.AddEntry(eff_hist_1D_base, "Run 2 WP")
     legend.Draw()
     drawCanv_1d.Print(plot_path + args.datasetType + "/diffeff_VSgenPt1D_" + plot_name + ".pdf")
 
+    hfile.Write()
 
-    # print("Total efficiency:")
-    # eff_deep = compute_deepTau_ptdep_eff(taus[0], taus[1], gen_taus[0], gen_taus[1], par, Pt_thr=Pt_thr)
-    # print(eff_deep)
     print("Total rate:")
     rate_deep = compute_deepTau_ptdep_rate_singleTau(taus_rates, Nev_den, par, deep_thr, Pt_thr=Pt_thr,
-                                           L1rate=L1rate_bm)
+                                           L1rate=L1rate_bm, optimise_VSe=args.optimise_VSe)
     print(rate_deep)
 
     plt.plot(tau_num.pt, deep_thr(tau_num, par, Pt_thr), ".")

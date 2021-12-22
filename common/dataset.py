@@ -12,12 +12,21 @@ def iterable(arg):
         and not isinstance(arg, six.string_types)
     )
 
+l2_thr = {
+    "DiTau": 0.4327,
+    # "HighPtTau": 0.1809,
+    "HighPtTau": 0.8517,
+    # "TauMET": 0.5940
+    "TauMET": 0.9535
+}
+
 class Dataset:
-    def __init__(self, fileName, treeName, treeName_gen, type="DiTau"):
+    def __init__(self, fileName, treeName, treeName_gen, type="DiTau", apply_l2=False):
         self.fileName = fileName
         self.treeName = treeName
         self.treeName_gen = treeName_gen
         self.type = type
+        self.apply_l2 = apply_l2
 
     def __define_tree_expression(self, is_gen):
         if is_gen:
@@ -38,6 +47,16 @@ class Dataset:
         # events = tree_in.arrays()  # filtered events
         tree_path = self.__define_tree_expression(is_gen=False)
         events = uproot.lazy(tree_path)
+        if (self.type in ["HighPtTau", "TauMET"]) and self.apply_l2:
+            print("applying l2 filter")
+            l2_mask = (events.l2nn_output >= l2_thr[self.type]) | (events.l1_pt >= 250)
+            ev_mask = ak.sum(l2_mask, axis=-1) >= 1
+            events = events[ev_mask]
+        if (self.type == "DiTau") and self.apply_l2:
+            print("applying l2 filter")
+            l2_mask = (events.l2nn_output >= l2_thr[self.type]) | (events.l1_pt >= 250)
+            ev_mask = ak.sum(l2_mask, axis=-1) >= 2
+            events = events[ev_mask]
         return events
 
     def get_gen_events(self):
@@ -52,8 +71,8 @@ class Dataset:
         taus_dict = {"e": events.tau_e, "pt": events.tau_pt, "eta": events.tau_eta, "phi": events.tau_phi,
                      "gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
                      "gen_phi": events.gen_tau_phi, "lepton_gen_match": events.lepton_gen_match,
-                     "deepTau_VSjet": events.deepTau_VSjet, "passed_last_filter": events.tau_passedLastFilter,
-                     "vz": events.tau_vz}
+                     "deepTau_VSjet": events.deepTau_VSjet, "deepTau_VSe": events.deepTau_VSe,
+                     "passed_last_filter": events.tau_passedLastFilter, "vz": events.tau_vz}
         taus = ak.zip(taus_dict)
         index = ak.argsort(taus.pt, ascending=False)
         taus = taus[index]

@@ -9,15 +9,25 @@ paths = {
     "HighPtTau": "HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_v12"
 }
 
+# optim_pars_paths = {
+#     "DiTau": [deep_thr_lin1, [0.57085716, 0.37163761]],
+#     "EleTau": [deep_thr_lin1, [0.78537964, 0.5286338]],
+#     # "EleTau": [deep_thr_lin1, [0.77, 0.6]],
+#     # "MuTau": [deep_thr_lin1, [0.46743955, 0.3611882]],
+#     "MuTau": [deep_thr_lin1_lowThr, [0.48133268, 0.31975578]],
+#     # "TauMET": [deep_thr_lin1_tauMET, [0.97836487, 0.90928622]],
+#     "TauMET": [deep_thr_lin1_tauMET, [0.96245395, 0.945]],
+#     "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.65320599]]
+# }
+
 optim_pars_paths = {
-    "DiTau": [deep_thr_lin1, [0.57085716, 0.37163761]],
-    "EleTau": [deep_thr_lin1, [0.78537964, 0.5286338]],
-    # "EleTau": [deep_thr_lin1, [0.77, 0.6]],
-    # "MuTau": [deep_thr_lin1, [0.46743955, 0.3611882]],
-    "MuTau": [deep_thr_lin1_lowThr, [0.48133268, 0.31975578]],
-    # "TauMET": [deep_thr_lin1_tauMET, [0.97836487, 0.90928622]],
-    "TauMET": [deep_thr_lin1_tauMET, [0.96245395, 0.945]],
-    "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.65320599]]
+    "DiTau": [deep_thr_lin1, [0.5701, 0.4610]],
+    "EleTau": [deep_thr_lin1, [0.844, 0.8457]],
+    "MuTau": [deep_thr_lin1_lowThr, [0.589, 0.331]],
+    # "TauMET": [deep_thr_lin1_tauMET, [0.958, 0.919]],
+    "TauMET": [deep_thr_lin1_tauMET, [0.9619, 0.9269]],
+    # "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.6072]]
+    "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.6755]]
 }
 
 rate_bm_paths = {

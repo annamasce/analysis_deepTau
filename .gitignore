@@ -6,3 +6,4 @@ notebooks/
 *__pycache__*
 *.pyc
 .idea/
+*.root

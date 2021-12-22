@@ -25,7 +25,6 @@ def true_taus_selected(datasets, Pt_thr):
         else:
             ev_mask = (ak.sum(num_tau_mask, axis=-1) > 0) & good_evt_selection(dataset.get_events(), good_events)
         taus_selected = (taus[num_tau_mask])[ev_mask]
-        print((ak.any(ak.num(taus_selected, axis=-1) > 1)))
         taus_list.append(taus_selected)
     taus_array_final = ak.concatenate(taus_list)
     print(len(taus_array_final))
@@ -33,16 +32,22 @@ def true_taus_selected(datasets, Pt_thr):
 
 
 # define function to compute algorithmic efficiency
-def compute_eff_algo(taus, a, Pt_thr, deep_thr):
+def compute_eff_algo(taus, a, Pt_thr, deep_thr, optimise_VSe=False):
     eff_presel = ak.sum(ak.num(taus, axis=-1) > 0)
-    deepTau_mask = taus.deepTau_VSjet > deep_thr(taus, a, Pt_thr)
+    if optimise_VSe:
+        deepTau_mask = (taus.deepTau_VSjet > deep_thr(taus, a[1:], Pt_thr)) & (taus.deepTau_VSe > a[0])
+    else:
+        deepTau_mask = taus.deepTau_VSjet > deep_thr(taus, a, Pt_thr)
     eff = ak.sum(ak.sum(deepTau_mask, axis=-1) > 0)
     return compute_eff_witherr(eff, eff_presel)
 
 
 # define function to compute rate
-def compute_rate(taus, Nev_den, Pt_thr, a, L1rate, deep_thr):
-    mask = (taus.deepTau_VSjet > deep_thr(taus, a, Pt_thr)) & reco_tau_selection(taus, minPt=Pt_thr)
+def compute_rate(taus, Nev_den, Pt_thr, a, L1rate, deep_thr, optimise_VSe=False):
+    if optimise_VSe:
+        mask = (taus.deepTau_VSjet > deep_thr(taus, a[1:], Pt_thr)) & (taus.deepTau_VSe > a[0]) & reco_tau_selection(taus, minPt=Pt_thr)
+    else:
+        mask = (taus.deepTau_VSjet > deep_thr(taus, a, Pt_thr)) & reco_tau_selection(taus, minPt=Pt_thr)
     Nev_num = ak.sum(ak.sum(mask, axis=-1) > 0)
     return Nev_num / Nev_den * L1rate
 
@@ -58,22 +63,23 @@ def loss(rate, rate_bm):
     return math.exp(k * (rate - rate_bm)) - 1
 
 
-def run_optimization(taus_selected, taus_rates, rate_bm, Pt_thr, deep_thr, Nev_den, L1rate):
+def run_optimization(taus_selected, taus_rates, rate_bm, Pt_thr, deep_thr, Nev_den, L1rate, optimise_VSe=False):
     def f(a):
-        rate = compute_rate(taus_rates, Nev_den, Pt_thr, a, L1rate, deep_thr)
-        eff_algo, _, _ = compute_eff_algo(taus_selected, a, Pt_thr, deep_thr)
+        rate = compute_rate(taus_rates, Nev_den, Pt_thr, a, L1rate, deep_thr, optimise_VSe=optimise_VSe)
+        eff_algo, _, _ = compute_eff_algo(taus_selected, a, Pt_thr, deep_thr, optimise_VSe=optimise_VSe)
         print(a, "\trate\t:", rate, "\teff\t:", eff_algo)
         return - eff_algo + loss(rate, rate_bm)
 
-    res = minimize(f, [0.9, 0.6], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
-    # res = minimize(f, [0.99], bounds=[(0.5, 1)], method="L-BFGS-B", options={"eps": 0.001})
+    res = minimize(f, [0.45, 0.78, 0.78], bounds=((0,1), (0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
+    # res = minimize(f, [0.9541, 0.9465], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
+    # res = minimize(f, [0.686], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 
     print("Optimized parameters:", res.x)
-    print("Rate:", compute_rate(taus_rates, Nev_den, Pt_thr, res.x, L1rate, deep_thr))
+    print("Rate:", compute_rate(taus_rates, Nev_den, Pt_thr, res.x, L1rate, deep_thr, optimise_VSe=optimise_VSe))
     return res.x
 
 
-def plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr, optim_x, label):
+def plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr, optim_x, label, optimise_VSe=False):
     eff = np.zeros([3, len(pt_bins)])
     pt_arrays = np.zeros([3, len(pt_bins)])
     for i in range(0, len(pt_bins)):
@@ -95,7 +101,10 @@ def plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr, optim_x, label
 
         Nev_presel = ak.sum(ak.flatten(bin_mask, axis=-1))
 
-        deepTau_mask = taus_selected.deepTau_VSjet > deep_thr(taus_selected, optim_x, Pt_thr)
+        if optimise_VSe:
+            deepTau_mask = (taus_selected.deepTau_VSjet > deep_thr(taus_selected, optim_x[1:], Pt_thr)) & (taus_selected.deepTau_VSe > optim_x[0])
+        else:
+            deepTau_mask = taus_selected.deepTau_VSjet > deep_thr(taus_selected, optim_x, Pt_thr)
         Nev_num = ak.sum(ak.flatten(bin_mask & deepTau_mask, axis=-1))
 
         eff_results = compute_eff_witherr(Nev_num, Nev_presel)
@@ -119,6 +128,8 @@ if __name__ == '__main__':
     parser.add_argument("tag", help="Tag of the pdf files with plots to be created")
     parser.add_argument("plotPath", help="Path of pdf files with plots to be created")
     parser.add_argument("datasetType", help="dataset type to identify proper generator selection for efficiency")
+    parser.add_argument("--remove_l2", help="apply L2 filter", action="store_true")
+    parser.add_argument("--optimise_VSe", help="apply L2 filter", action="store_true")
     args = parser.parse_args()
 
     if args.datasetType not in ["EleTau", "MuTau", "DiTau", "TauMET", "HighPtTau"]:
@@ -128,20 +139,23 @@ if __name__ == '__main__':
     plot_path = args.plotPath
     Pt_thr = Pt_thr_paths[args.datasetType]
     rate_bm = rate_bm_paths[args.datasetType]
+    apply_l2 = not args.remove_l2
 
     # deepTau eff dataset
-    # fileName_1 = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/WJetsToLNu_deepTau.root"
-    fileName_1 = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/VBFHToTauTau_deepTau_211115.root"
-    fileName_2 = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/ZprimeToTauTau_deepTau_211115.root"
+    fileName_1 = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211213/VBFHToTauTau_deepTau.root"
+    fileName_2 = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211213/ZprimeToTauTau_deepTau.root"
+    fileName_3 = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211213/WJetsToLNu_deepTau.root"
     treeName_in = "final_{}_counter".format(args.datasetType)
     treeName_gen = "gen_counter"
-    datasets_eff = [Dataset(fileName_1, treeName_in, treeName_gen, type=args.datasetType), Dataset(fileName_2, treeName_in, treeName_gen, type=args.datasetType)]
-    # datasets_eff = [Dataset(fileName_1, treeName_in, treeName_gen, type=args.datasetType)]
+    datasets_eff = [Dataset(fileName_1, treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2), Dataset(fileName_2, treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2)]
+    # datasets_eff = [Dataset(fileName_1, treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2),
+    #                 Dataset(fileName_2, treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2),
+    #                 Dataset(fileName_3, treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2)]
     taus_selected = true_taus_selected(datasets_eff, Pt_thr)
 
     # deepTau rate dataset
-    fileName_rates = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211109/Ephemeral_deepTau.root"
-    dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen, type=args.datasetType)
+    fileName_rates = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211213/Ephemeral_deepTau.root"
+    dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2)
     taus_rates = dataset_rates.get_taus()
     taus_rates = taus_rates[taus_rates.passed_last_filter]
     Nev_den = len(dataset_rates.get_gen_events())
@@ -150,23 +164,19 @@ if __name__ == '__main__':
     lumi_real = 122.792 / 7319
     L1rate_bm = L1rate * lumi_bm / lumi_real
 
-    # eff_base = np.zeros([3, len(pt_bins)])
-    optim_res = []
     fig, ax = plt.subplots()
     pt_bins = [Pt_thr, 35, 40, 45, 50, 60, 70, 100, 150, 200, 250, 300, 400, 600]
-    # pt_bins = [Pt_thr, 60, 70, 100, 150, 200]
+    # pt_bins = [Pt_thr, 60, 70, 100, 150, 200, 250, 300, 400, 600]
     # pt_bins = [Pt_thr, 200, 250, 300, 400, 500, 700, 1000, 2000]
 
-    optim_x = run_optimization(taus_selected, taus_rates, rate_bm, Pt_thr, deep_thr_lin1, Nev_den, L1rate_bm)
-    optim_res.append(optim_x)
-    plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr_lin1, optim_x, tag)
+    optim_x = run_optimization(taus_selected, taus_rates, rate_bm, Pt_thr, deep_thr_lin1_lowThr, Nev_den, L1rate_bm, optimise_VSe=args.optimise_VSe)
+    plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr_lin1_lowThr, optim_x, tag, optimise_VSe=args.optimise_VSe)
     plt.legend()
-    # plt.savefig("algo_eff_flatten_{}.pdf".format(tag))
     plt.show()
     plt.close()
 
     # func_dictionary = {
-    #     "Low thr at high pT": [deep_thr_lin1_tauMET, [0.96245395, 0.945]]
+    #     "lin model 1, Pt steps at 300 and 500 GeV": [deep_thr_lin1_tauMET, [0.9430, 0.9299]]
     # }
     #
     # for func in func_dictionary:
