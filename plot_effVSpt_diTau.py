@@ -43,11 +43,11 @@ if __name__ == '__main__':
     plot_name = args.plotName
     plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/DiTau/"
     data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/"
-    fileName_eff_1 = "211213/VBFHToTauTau_deepTau.root"
-    fileName_eff_2 = "211213/ZprimeToTauTau_deepTau.root"
-    fileName_eff_base_1 = "211109/VBFHToTauTau_oldHLT.root"
-    fileName_eff_base_2 = "211109/ZprimeToTauTau_oldHLT.root"
-    fileName_rates = "211213/Ephemeral_deepTau.root"
+    fileName_eff_1 = "220330/VBFHToTauTau_deepTau.root"
+    fileName_eff_2 = "220330/ZprimeToTauTau_deepTau.root"
+    fileName_eff_base_1 = "220405/VBFHToTauTau_oldHLT.root"
+    fileName_eff_base_2 = "220405/ZprimeToTauTau_oldHLT.root"
+    fileName_rates = "220409/Ephemeral_deepTau.root"
     treeName_gen = "gen_counter"
     treeName_in = "final_DiTau_counter"
     treeName_in_base = "final_HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v4_counter"
@@ -90,8 +90,8 @@ if __name__ == '__main__':
     Nev_den = len(dataset_rates.get_gen_events())
     print(Nev_den)
 
-    # Pt_bins = [20, 25, 30, 35, 40, 50, 60, 70, 100, 200, 500, 1000]
-    Pt_bins = [35, 50, 100, 200, 500, 2000]
+    Pt_bins = [20, 25, 30, 35, 40, 45, 50, 60, 70, 100, 200, 500, 1000]
+    # Pt_bins = [35, 50, 100, 200, 500, 2000]
     nbins = len(Pt_bins) - 1
     # optim_pars = {35: [0.49948551]}
     par = optim_pars_paths["DiTau"][1]

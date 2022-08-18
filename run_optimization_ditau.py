@@ -24,46 +24,6 @@ def true_taus_selected(taus, Pt_thr):
     return tau_1_selected, tau_2_selected
 
 
-def deep_thr_lin1(tau, par, Pt_thr):
-    a_1 = (par[1] - par[0]) / (100 - Pt_thr)
-    b_1 = par[1] - 100 * a_1
-    c = 0.125
-    a_2 = (c - par[1]) / 200
-    b_2 = c - 300 * a_2
-
-    thr1 = ak.where(tau.pt < 100, a_1 * tau.pt + b_1, 0)
-    thr2 = ak.where((tau.pt >= 100) & (tau.pt < 300), a_2 * tau.pt + b_2, 0)
-    thr3 = ak.where(tau.pt >= 300, c, 0)
-    deep_thr = thr1 + thr2 + thr3
-    return deep_thr
-
-
-def deep_thr_parab(tau, par, Pt_thr):
-    a_1 = (par[1] - par[0]) / (-10000 - Pt_thr ** 2 + 200 * Pt_thr)
-    b_1 = -200 * a_1
-    c_1 = par[1] - a_1 * 100 ** 2 - b_1 * 100
-
-    c = 0.125
-    a_2 = (c - par[1]) / 200
-    b_2 = c - 300 * a_2
-
-    thr1 = ak.where(tau.pt < 100, a_1 * tau.pt ** 2 + b_1 * tau.pt + c_1, 0)
-    thr2 = ak.where((tau.pt >= 100) & (tau.pt < 300), a_2 * tau.pt + b_2, 0)
-    thr3 = ak.where(tau.pt >= 300, c, 0)
-    deep_thr = thr1 + thr2 + thr3
-    return deep_thr
-
-
-def deep_thr_lin2(tau, par, Pt_thr):
-    c = 0.125
-    m = (c - par[0]) / (300 - Pt_thr)
-    q = c - m * 300
-    thr1 = ak.where((tau.pt < 300), m * tau.pt + q, 0)
-    thr2 = ak.where(tau.pt >= 300, c, 0)
-    deep_thr = thr1 + thr2
-    return deep_thr
-
-
 # define function to compute algorithmic efficiency
 def compute_eff_algo(tau_1, tau_2, a, Pt_thr, deep_thr):
     eff_presel = ak.sum(ak.num(tau_1, axis=-1) >= 1)
@@ -92,21 +52,6 @@ def loss(rate):
     return math.exp(k * (rate - 46)) - 1
 
 
-def compute_eff_algo_base(tau_1, tau_2):
-    eff_presel = len(tau_1)
-    mask_1 = iso_tau_selection(tau_1, "mediumIsoAbs", "mediumIsoRel")
-    mask_2 = iso_tau_selection(tau_2, "mediumIsoAbs", "mediumIsoRel")
-    eff = ak.sum(ditau_selection(mask_1, mask_2))
-    return compute_eff_witherr(eff, eff_presel)
-
-
-def compute_rate_base(tau_1, tau_2, Nev_den, Pt_thr, L1rate):
-    mask_1 = iso_tau_selection(tau_1, "mediumIsoAbs", "mediumIsoRel") & reco_tau_selection(tau_1, minPt=Pt_thr)
-    mask_2 = iso_tau_selection(tau_2, "mediumIsoAbs", "mediumIsoRel") & reco_tau_selection(tau_2, minPt=Pt_thr)
-    Nev_num = ak.sum(ditau_selection(mask_1, mask_2))
-    return Nev_num / Nev_den * L1rate
-
-
 def run_optimization(taus, taus_rates, Pt_thr, deep_thr, Nev_den, L1rate):
     taus_selected = true_taus_selected(taus, Pt_thr)
 
@@ -117,7 +62,7 @@ def run_optimization(taus, taus_rates, Pt_thr, deep_thr, Nev_den, L1rate):
         return - eff_algo + loss(rate)
 
     # res = minimize(f, [0.7, 0.7], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.001})
-    res = minimize(f, [0.571, 0.453], bounds=((0.125, 1), (0.125, 1)), method="L-BFGS-B", options={"eps": 0.001})
+    res = minimize(f, [0.62, 0.39], bounds=((0.05, 1), (0.05, 1)), method="L-BFGS-B", options={"eps": 0.0001})
     # res = minimize(f, [0.7], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 
     print("Optimized parameters:", res.x)
@@ -181,8 +126,8 @@ if __name__ == '__main__':
     tag = args.tag
 
     # deepTau eff dataset
-    fileName = ["/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211220/VBFHToTauTau_deepTau.root",
-                "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211220/ZprimeToTauTau_deepTau.root"]
+    fileName = ["/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/220330/VBFHToTauTau_deepTau.root",
+                "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/220330/ZprimeToTauTau_deepTau.root"]
     treeName_in = "final_DiTau_counter"
     treeName_gen = "gen_counter"
     dataset_eff = Dataset(fileName, treeName_in, treeName_gen, type="DiTau", apply_l2=True)
@@ -190,7 +135,7 @@ if __name__ == '__main__':
     taus = DzMatchFilter(taus[0], taus[1])
 
     # deepTau rate dataset
-    fileName_rates = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/211220/Ephemeral_deepTau.root"
+    fileName_rates = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/220409/Ephemeral_deepTau.root"
     dataset_rates = Dataset(fileName_rates, treeName_in, treeName_gen, type="DiTau", apply_l2=True)
     taus_rates = dataset_rates.get_taupairs(apply_selection=False)
     taus_rates = DzMatchFilter(taus_rates[0], taus_rates[1])
@@ -204,8 +149,8 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
 
     Pt_thr = 35
-    optim_x = run_optimization(taus, taus_rates, Pt_thr, deep_thr_lin1, Nev_den, L1rate_bm)
-    plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr_lin1, optim_x, tag)
+    optim_x = run_optimization(taus, taus_rates, Pt_thr, deep_thr_lin1_lowThr, Nev_den, L1rate_bm)
+    plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr_lin1_lowThr, optim_x, tag)
     plt.legend()
     # plt.savefig("algo_eff_flatten_{}.pdf".format(tag))
     plt.show()

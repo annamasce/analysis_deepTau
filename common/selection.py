@@ -31,6 +31,10 @@ def delta_z(v1, v2):
     dz = v1.vz - v2.vz
     return dz
 
+def deep_thr_VSele(tau, a):
+    thr = ak.where(tau.pt < 300, a, 0)
+    return thr
+
 def deep_thr_lin1(tau, par, Pt_thr):
     a_1 = (par[1] - par[0]) / (100 - Pt_thr)
     b_1 = par[1] - 100 * a_1

@@ -13,20 +13,26 @@ def iterable(arg):
     )
 
 l2_thr = {
-    "DiTau": 0.4327,
+    "DiTau": 0.386,
+    # "DiTau": 0.339,
     # "HighPtTau": 0.1809,
-    "HighPtTau": 0.8517,
+    "HighPtTau": 0.035,
     # "TauMET": 0.5940
     "TauMET": 0.9535
 }
 
 class Dataset:
-    def __init__(self, fileName, treeName, treeName_gen, type="DiTau", apply_l2=False):
+    def __init__(self, fileName, treeName, treeName_gen, type="DiTau", apply_l2=False, decay_modes=False):
         self.fileName = fileName
         self.treeName = treeName
         self.treeName_gen = treeName_gen
         self.type = type
         self.apply_l2 = apply_l2
+        self.decay_modes = decay_modes
+
+    @staticmethod
+    def compute_decay_mode(nChargedHad, nNeutralHad):
+        return (nChargedHad - 1) * 5 + nNeutralHad
 
     def __define_tree_expression(self, is_gen):
         if is_gen:
@@ -53,6 +59,10 @@ class Dataset:
             ev_mask = ak.sum(l2_mask, axis=-1) >= 1
             events = events[ev_mask]
         if (self.type == "DiTau") and self.apply_l2:
+            print("applying l1 filter")
+            l1_mask = (events.l1_pt >= 32)
+            ev_mask = ak.sum(l1_mask, axis=-1) >= 2
+            events = events[ev_mask]
             print("applying l2 filter")
             l2_mask = (events.l2nn_output >= l2_thr[self.type]) | (events.l1_pt >= 250)
             ev_mask = ak.sum(l2_mask, axis=-1) >= 2
@@ -73,6 +83,8 @@ class Dataset:
                      "gen_phi": events.gen_tau_phi, "lepton_gen_match": events.lepton_gen_match,
                      "deepTau_VSjet": events.deepTau_VSjet, "deepTau_VSe": events.deepTau_VSe,
                      "passed_last_filter": events.tau_passedLastFilter, "vz": events.tau_vz}
+        if self.decay_modes:
+            taus_dict["gen_decay_mode"] = Dataset.compute_decay_mode(events.gen_tau_nChargedHadrons, events.gen_tau_nNeutralHadrons)
         taus = ak.zip(taus_dict)
         index = ak.argsort(taus.pt, ascending=False)
         taus = taus[index]
@@ -95,9 +107,12 @@ class Dataset:
 
     def get_gen_taus(self):
         events = self.get_gen_events()
-        gen_taus = ak.zip({"gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
+        gen_taus_dict = {"gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
                            "gen_phi": events.gen_tau_phi,
-                           "lepton_gen_match": events.lepton_gen_match})
+                           "lepton_gen_match": events.lepton_gen_match}
+        if self.decay_modes:
+            gen_taus_dict["gen_decay_mode"] = Dataset.compute_decay_mode(events.gen_tau_nChargedHadrons, events.gen_tau_nNeutralHadrons)
+        gen_taus = ak.zip(gen_taus_dict)
         index = ak.argsort(gen_taus.gen_pt, ascending=False)
         gen_taus = gen_taus[index]
         return gen_taus

@@ -227,7 +227,7 @@ def compute_deepTau_ptdep_rate_singleTau(taus, Nev_den, par, deep_thr,  Pt_thr=2
     Computes rate of single-tau HLT path for a pt dependent deepTau thr
     """
     if optimise_VSe:
-        num_tau_mask = reco_tau_selection(taus, minPt=Pt_thr) & deepTau_selection_ptdep(taus, Pt_thr, par[1:], deep_thr) & (taus.deepTau_VSe > par[0])
+        num_tau_mask = reco_tau_selection(taus, minPt=Pt_thr) & deepTau_selection_ptdep(taus, Pt_thr, par[1:], deep_thr) & (taus.deepTau_VSe > deep_thr_VSele(taus, par[0]))
     else:
         num_tau_mask = reco_tau_selection(taus, minPt=Pt_thr) & deepTau_selection_ptdep(taus, Pt_thr, par, deep_thr)
     Nev_num = ak.sum(ak.sum(num_tau_mask, axis=-1) > 0)

@@ -8,6 +8,8 @@ from common.dataset import Dataset
 from HLT_paths import paths, optim_pars_paths, Pt_thr_paths
 import matplotlib.pyplot as plt
 
+DM = None
+
 
 def set_eff1Dhist_style(hist, Pt_thr, Pt_max):
     hist.GetXaxis().SetTitle("gen p_{T} tau [GeV]")
@@ -20,7 +22,7 @@ def set_eff1Dhist_style(hist, Pt_thr, Pt_max):
     hist.SetMarkerStyle(kFullCircle)
     return hist
 
-def taus_preselected(datasets, Pt_thr):
+def taus_preselected(datasets, Pt_thr, decay_mode=None):
     # select only true taus that pass generator preselection
     num_taus_list = []
     den_taus_list = []
@@ -31,6 +33,9 @@ def taus_preselected(datasets, Pt_thr):
         gen_taus = dataset.get_gen_taus()
         num_tau_mask = (taus.passed_last_filter > 0) & num_mask_eff(taus, Pt_thr=Pt_thr)
         den_tau_mask = den_mask_eff(gen_taus)
+        if decay_mode is not None:
+            num_tau_mask = num_tau_mask & (taus.gen_decay_mode == decay_mode)
+            den_tau_mask = den_tau_mask & (gen_taus.gen_decay_mode == decay_mode)
         if dataset.type in ["TauMET", "HighPtTau"]:
             num_ev_mask = (ak.sum(num_tau_mask, axis=-1) == 1) & good_evt_selection(dataset.get_events(),
                                                                                     good_events)
@@ -54,7 +59,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("plotName", help="name of the pdf plot")
     parser.add_argument("datasetType", help="dataset type to identify proper generator selection for efficiency")
-    parser.add_argument("--remove_l2", help="apply L2 filter", action="store_true")
+    parser.add_argument("--remove_l2", help="remove L2 filter", action="store_true")
     parser.add_argument("--optimise_VSe", help="optimise deepTau VSe thr", action="store_true")
     args = parser.parse_args()
     apply_l2 = not args.remove_l2
@@ -64,7 +69,7 @@ if __name__ == '__main__':
     plot_name = args.plotName
     plot_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/plots/"
     data_path = "/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/"
-    fileName_rates = data_path + "211213/Ephemeral_deepTau.root"
+    fileName_rates = data_path + "220409/Ephemeral_deepTau.root"
     treeName_gen = "gen_counter"
     treeName_in = "final_{}_counter".format(args.datasetType)
     treeName_in_base = "final_{}_counter".format(paths[args.datasetType])
@@ -80,7 +85,7 @@ if __name__ == '__main__':
 
     # get taus for efficiency
     print("Loading sample for efficiency")
-    datasets_eff = [Dataset(data_path + "211213/ZprimeToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2), Dataset(data_path + "211213/VBFHToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2)]
+    datasets_eff = [Dataset(data_path + "220330/ZprimeToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2, decay_modes=True), Dataset(data_path + "220330/VBFHToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType, apply_l2=apply_l2, decay_modes=True)]
     # datasets_eff = [
     #     # Dataset(data_path + "211213/ZprimeToTauTau_deepTau.root", treeName_in, treeName_gen, type=args.datasetType,
     #     #         apply_l2=apply_l2),
@@ -91,7 +96,7 @@ if __name__ == '__main__':
 
     # get taus for old HLT efficiency
     print("Loading sample for old HLT efficiency")
-    datasets_eff_base = [Dataset(data_path + "211109/ZprimeToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType), Dataset(data_path + "211109/VBFHToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType)]
+    datasets_eff_base = [Dataset(data_path + "220405/ZprimeToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType, decay_modes=False), Dataset(data_path + "220405/VBFHToTauTau_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType, decay_modes=False)]
     # datasets_eff_base = [Dataset(data_path + "211109/WjetsToLNu_oldHLT.root", treeName_in_base, treeName_gen, type=args.datasetType)]
 
     # get taus for rates
@@ -110,9 +115,9 @@ if __name__ == '__main__':
     nbins = len(Pt_bins) - 1
 
     print("Plotting differential efficiency vs gen Pt")
-    taus_num, taus_den = taus_preselected(datasets_eff, Pt_thr)
+    taus_num, taus_den = taus_preselected(datasets_eff, Pt_thr, decay_mode=DM)
     if args.optimise_VSe:
-        deepTau_mask = deepTau_selection_ptdep(taus_num, Pt_thr, par[1:], deep_thr) & (taus_num.deepTau_VSe > par[0])
+        deepTau_mask = deepTau_selection_ptdep(taus_num, Pt_thr, par[1:], deep_thr) & (taus_num.deepTau_VSe > deep_thr_VSele(taus_num, par[0]))
     else:
         deepTau_mask = deepTau_selection_ptdep(taus_num, Pt_thr, par, deep_thr)
     taus_num = (taus_num[deepTau_mask])[ak.sum(deepTau_mask, axis=-1) > 0]
@@ -138,7 +143,7 @@ if __name__ == '__main__':
 
     # Compute Run 2 WP efficiency
     print("Plotting old HLT differential efficiency vs gen Pt")
-    taus_num_base, taus_den_base = taus_preselected(datasets_eff_base, Pt_thr)
+    taus_num_base, taus_den_base = taus_preselected(datasets_eff_base, Pt_thr, decay_mode=DM)
     tau_num_base = ak.firsts(taus_num_base)
     tau_den_base = ak.firsts(taus_den_base)
 

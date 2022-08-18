@@ -7,6 +7,7 @@ paths = {
     "MuTau": "HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1_v4",
     "TauMET": "HLT_MediumChargedIsoPFTau50_Trk30_eta2p1_1pr_MET100_v12",
     "HighPtTau": "HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_v12"
+    # "HighPtTau": "HLT_MediumChargedIsoPFTau180HighPtRelaxedIso_Trk50_eta2p1_1pr_v11"
 }
 
 # optim_pars_paths = {
@@ -21,13 +22,15 @@ paths = {
 # }
 
 optim_pars_paths = {
-    "DiTau": [deep_thr_lin1, [0.5701, 0.4610]],
-    "EleTau": [deep_thr_lin1, [0.844, 0.8457]],
-    "MuTau": [deep_thr_lin1_lowThr, [0.589, 0.331]],
+    # "DiTau": [deep_thr_lin1_lowThr, [0.6065, 0.4384]],
+    "DiTau": [deep_thr_lin1_lowThr, [0.62, 0.3891]],
+    # "EleTau": [deep_thr_lin1_lowThr, [0.7045, 0.7029]],
+    "EleTau": [deep_thr_lin1_lowThr, [0.3980, 0.6668, 0.4844]],
+    "MuTau": [deep_thr_lin1_lowThr, [0.5419, 0.4837]],
     # "TauMET": [deep_thr_lin1_tauMET, [0.958, 0.919]],
     "TauMET": [deep_thr_lin1_tauMET, [0.9619, 0.9269]],
     # "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.6072]]
-    "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.6755]]
+    "HighPtTau": [partial(deep_thr_lin2_highPt, Pt_step=500), [0.7421]]
 }
 
 rate_bm_paths = {
