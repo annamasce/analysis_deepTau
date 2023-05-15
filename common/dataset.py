@@ -53,6 +53,7 @@ class Dataset:
         # events = tree_in.arrays()  # filtered events
         tree_path = self.__define_tree_expression(is_gen=False)
         events = uproot.lazy(tree_path)
+        # Apply L2 filter for concerned paths - NOTE: L2 score could be set to -1 in ntuples for studies
         if (self.type in ["HighPtTau", "TauMET"]) and self.apply_l2:
             print("applying l2 filter")
             l2_mask = (events.l2nn_output >= l2_thr[self.type]) | (events.l1_pt >= 250)
@@ -60,6 +61,7 @@ class Dataset:
             events = events[ev_mask]
         if (self.type == "DiTau") and self.apply_l2:
             print("applying l1 filter")
+            # Apply also L1 filter to Di-Tau path to study different L1 thresholds
             l1_mask = (events.l1_pt >= 32)
             ev_mask = ak.sum(l1_mask, axis=-1) >= 2
             events = events[ev_mask]
@@ -94,6 +96,7 @@ class Dataset:
         events = self.get_events()
         taus = self.get_taus()
         tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
+        # Necessary selection for old ntuples production (last filters to be applied offline)
         if apply_selection:
             L1taus = ak.zip({"e": events.L1tau_e, "pt": events.L1tau_pt, "eta": events.L1tau_eta,
                              "phi": events.L1tau_phi})

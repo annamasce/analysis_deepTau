@@ -128,7 +128,7 @@ if __name__ == '__main__':
     parser.add_argument("tag", help="Tag of the pdf files with plots to be created")
     parser.add_argument("plotPath", help="Path of pdf files with plots to be created")
     parser.add_argument("datasetType", help="dataset type to identify proper generator selection for efficiency")
-    parser.add_argument("--remove_l2", help="apply L2 filter", action="store_true")
+    parser.add_argument("--remove_l2", help="remove L2 filter", action="store_true")
     parser.add_argument("--optimise_VSe", help="apply L2 filter", action="store_true")
     args = parser.parse_args()
 

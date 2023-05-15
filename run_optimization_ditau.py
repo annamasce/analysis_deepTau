@@ -41,10 +41,8 @@ def compute_rate(tau_1, tau_2, Nev_den, Pt_thr, a, L1rate, deep_thr):
     return Nev_num / Nev_den * L1rate
 
 
-k = math.log(2) / 0.1
-
-
 def loss(rate):
+    k = math.log(2) / 0.1
     if rate <= 46:
         return 0
     if rate > 46.1:
@@ -62,7 +60,7 @@ def run_optimization(taus, taus_rates, Pt_thr, deep_thr, Nev_den, L1rate):
         return - eff_algo + loss(rate)
 
     # res = minimize(f, [0.7, 0.7], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.001})
-    res = minimize(f, [0.62, 0.39], bounds=((0.05, 1), (0.05, 1)), method="L-BFGS-B", options={"eps": 0.0001})
+    res = minimize(f, [0.9, 0.7], bounds=((0.05, 1), (0.05, 1)), method="L-BFGS-B", options={"eps": 0.001})
     # res = minimize(f, [0.7], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 
     print("Optimized parameters:", res.x)
@@ -151,7 +149,7 @@ if __name__ == '__main__':
     Pt_thr = 35
     optim_x = run_optimization(taus, taus_rates, Pt_thr, deep_thr_lin1_lowThr, Nev_den, L1rate_bm)
     plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr_lin1_lowThr, optim_x, tag)
-    plt.legend()
+    # plt.legend()
     # plt.savefig("algo_eff_flatten_{}.pdf".format(tag))
     plt.show()
     # plt.close()

@@ -22,12 +22,12 @@ def set_eff2Dhist_style(hist, Pt_thr, Pt_max, cut_based = False):
     hist.GetYaxis().SetMoreLogLabels(kTRUE)
     hist.GetYaxis().SetTitleOffset(1.3)
     hist.GetXaxis().SetTitleOffset(1.2)
-    if Pt_thr==20:
-        hist.GetXaxis().SetRangeUser(Pt_thr, Pt_max)
-        hist.GetYaxis().SetRangeUser(Pt_thr, Pt_max)
-    else:
-        hist.GetXaxis().SetRangeUser(Pt_thr-5., Pt_max)
-        hist.GetYaxis().SetRangeUser(Pt_thr-5., Pt_max)
+    # if Pt_thr==20:
+    hist.GetXaxis().SetRangeUser(Pt_thr, Pt_max)
+    hist.GetYaxis().SetRangeUser(Pt_thr, Pt_max)
+    # else:
+    #     hist.GetXaxis().SetRangeUser(Pt_thr-5., Pt_max)
+    #     hist.GetYaxis().SetRangeUser(Pt_thr-5., Pt_max)
     hist.SetMarkerSize(1.5)
     return hist
 
@@ -90,7 +90,8 @@ if __name__ == '__main__':
     Nev_den = len(dataset_rates.get_gen_events())
     print(Nev_den)
 
-    Pt_bins = [20, 25, 30, 35, 40, 45, 50, 60, 70, 100, 200, 500, 1000]
+    # Pt_bins = [20, 25, 30, 35, 40, 45, 50, 60, 70, 100, 200, 500, 1000]
+    Pt_bins = [35, 40, 45, 50, 60, 70, 100, 200, 300]
     # Pt_bins = [35, 50, 100, 200, 500, 2000]
     nbins = len(Pt_bins) - 1
     # optim_pars = {35: [0.49948551]}
@@ -133,6 +134,7 @@ if __name__ == '__main__':
     eff_hist_2D.Divide(den_hist_2D)
 
     eff_hist_2D = set_eff2Dhist_style(eff_hist_2D, Pt_thr, Pt_bins[-1])
+    eff_hist_2D.SetMaximum(0.8)
 
     gStyle.SetOptStat(0)
     drawCanv_2d = TCanvas("c2", "")
@@ -176,6 +178,7 @@ if __name__ == '__main__':
         eff_hist_2D_base.Divide(den_hist_2D_base)
 
         eff_hist_2D_base = set_eff2Dhist_style(eff_hist_2D_base, Pt_thr, Pt_bins[-1], cut_based=True)
+        eff_hist_2D_base.SetMaximum(0.8)
 
         drawCanv_2d = TCanvas("c2_base", "")
         gPad.SetLogx()

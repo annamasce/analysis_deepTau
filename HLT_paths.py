@@ -23,7 +23,7 @@ paths = {
 
 optim_pars_paths = {
     # "DiTau": [deep_thr_lin1_lowThr, [0.6065, 0.4384]],
-    "DiTau": [deep_thr_lin1_lowThr, [0.62, 0.3891]],
+    "DiTau": [deep_thr_lin1_lowThr, [0.61898598, 0.64095102]],
     # "EleTau": [deep_thr_lin1_lowThr, [0.7045, 0.7029]],
     "EleTau": [deep_thr_lin1_lowThr, [0.3980, 0.6668, 0.4844]],
     "MuTau": [deep_thr_lin1_lowThr, [0.5419, 0.4837]],
@@ -34,7 +34,7 @@ optim_pars_paths = {
 }
 
 rate_bm_paths = {
-    "DiTau": 46,
+    "DiTau": 30.4,
     "EleTau": 8.62,
     "MuTau": 4.47,
     "TauMET": 1.92,
