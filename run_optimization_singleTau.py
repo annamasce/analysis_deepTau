@@ -1,5 +1,6 @@
 import sys
 import argparse
+import json
 from functools import partial
 from common.dataset import Dataset
 from common.eff_rate import *
@@ -70,8 +71,8 @@ def run_optimization(taus_selected, taus_rates, rate_bm, Pt_thr, deep_thr, Nev_d
         print(a, "\trate\t:", rate, "\teff\t:", eff_algo)
         return - eff_algo + loss(rate, rate_bm)
 
-    res = minimize(f, [0.4, 0.7, 0.5], bounds=((0,1), (0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
-    # res = minimize(f, [0.9, 0.9], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
+    # res = minimize(f, [0.4, 0.7, 0.5], bounds=((0,1), (0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
+    res = minimize(f, [0.9, 0.5], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.01})
     # res = minimize(f, [0.77], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 
     print("Optimized parameters:", res.x)
@@ -79,7 +80,7 @@ def run_optimization(taus_selected, taus_rates, rate_bm, Pt_thr, deep_thr, Nev_d
     return res.x
 
 
-def plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr, optim_x, label, optimise_VSe=False):
+def plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr, optim_x, label, optimise_VSe=False, json_file_path="algo_eff.json"):
     eff = np.zeros([3, len(pt_bins)])
     pt_arrays = np.zeros([3, len(pt_bins)])
     for i in range(0, len(pt_bins)):
@@ -93,10 +94,10 @@ def plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr, optim_x, label
             pt_arrays[2, i] = pt_max - central_value
             bin_mask = (taus_selected.pt >= pt_min) & (taus_selected.pt < pt_max)
         else:
-            central_value = (1000 + pt_min) / 2
+            central_value = (3000 + pt_min) / 2
             pt_arrays[0, i] = central_value
             pt_arrays[1, i] = central_value - pt_min
-            pt_arrays[2, i] = 1000 - central_value
+            pt_arrays[2, i] = 3000 - central_value
             bin_mask = (taus_selected.pt >= pt_min)
 
         Nev_presel = ak.sum(ak.flatten(bin_mask, axis=-1))
@@ -118,6 +119,16 @@ def plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr, optim_x, label
     ax.set_xscale("log")
     ax.set_xticks(pt_bins)
     ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
+    eff_dict = {
+        "pt_bins": list(pt_bins),
+        "eff": list(eff[0, :]),
+        "err_low": list(eff[1, :]),
+        "err_up": list(eff[2, :])
+    }
+    print(json_file_path)
+    with open(json_file_path, "w") as file:
+        json.dump(eff_dict, file, indent=4)
+
     # ax.set_xlim(30, 1000)
     # ax.set_ylim(0.86, 1)
 
@@ -165,12 +176,12 @@ if __name__ == '__main__':
     L1rate_bm = L1rate * lumi_bm / lumi_real
 
     fig, ax = plt.subplots()
-    pt_bins = [Pt_thr, 35, 40, 45, 50, 60, 70, 100, 150, 200, 250, 300, 400, 600]
+    # pt_bins = [Pt_thr, 35, 40, 45, 50, 60, 70, 100, 150, 200, 250, 300, 400, 600]
     # pt_bins = [Pt_thr, 60, 70, 100, 150, 200, 250, 300, 400, 600]
-    # pt_bins = [Pt_thr, 200, 250, 300, 400, 500, 700, 1000, 2000]
+    pt_bins = [Pt_thr, 200, 250, 300, 400, 500, 700, 1000, 2000]
 
     optim_x = run_optimization(taus_selected, taus_rates, rate_bm, Pt_thr, deep_thr_lin1_lowThr, Nev_den, L1rate_bm, optimise_VSe=args.optimise_VSe)
-    plot_algo_eff_singleTau(taus_selected, pt_bins, ax, deep_thr_lin1_lowThr, optim_x, tag, optimise_VSe=args.optimise_VSe)
+    plot_algo_eff_singleTau(taus_selected, pt_bins, ax, partial(deep_thr_lin2_highPt, Pt_step=500), optim_x, tag, optimise_VSe=args.optimise_VSe, json_file_path=plot_path+"/algo_eff_flatten_{}.json".format(tag))
     plt.legend()
     plt.show()
     plt.close()

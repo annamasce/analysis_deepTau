@@ -1,10 +1,9 @@
 import uproot
 import sys
 import awkward as ak
-from common.selection import *
-
 import collections
 import six
+from common.selection import *
 
 def iterable(arg):
     return (
@@ -52,21 +51,25 @@ class Dataset:
         # tree_in = uproot.open(self.fileName)[self.treeName]
         # events = tree_in.arrays()  # filtered events
         tree_path = self.__define_tree_expression(is_gen=False)
-        events = uproot.lazy(tree_path)
+        events = None
+        if iterable(tree_path):
+            events = uproot.concatenate(tree_path)
+        else:
+            events = uproot.open(tree_path).arrays()
         # Apply L2 filter for concerned paths - NOTE: L2 score could be set to -1 in ntuples for studies
         if (self.type in ["HighPtTau", "TauMET"]) and self.apply_l2:
             print("applying l2 filter")
-            l2_mask = (events.l2nn_output >= l2_thr[self.type]) | (events.l1_pt >= 250)
+            l2_mask = (events["l2nn_output"] >= l2_thr[self.type]) | (events["l1_pt"] >= 250)
             ev_mask = ak.sum(l2_mask, axis=-1) >= 1
             events = events[ev_mask]
         if (self.type == "DiTau") and self.apply_l2:
             print("applying l1 filter")
             # Apply also L1 filter to Di-Tau path to study different L1 thresholds
-            l1_mask = (events.l1_pt >= 32)
+            l1_mask = (events["l1_pt"] >= 32)
             ev_mask = ak.sum(l1_mask, axis=-1) >= 2
             events = events[ev_mask]
             print("applying l2 filter")
-            l2_mask = (events.l2nn_output >= l2_thr[self.type]) | (events.l1_pt >= 250)
+            l2_mask = (events["l2nn_output"] >= l2_thr[self.type]) | (events["l1_pt"] >= 250)
             ev_mask = ak.sum(l2_mask, axis=-1) >= 2
             events = events[ev_mask]
         return events
@@ -75,18 +78,23 @@ class Dataset:
         # tree_gen = uproot.open(self.fileName)[self.treeName_gen]
         # events = tree_gen.arrays()  # generator events
         tree_path = self.__define_tree_expression(is_gen=True)
-        events = uproot.lazy(tree_path)
+        print(tree_path)
+        events = None
+        if iterable(tree_path):
+            events = uproot.concatenate(tree_path)
+        else:
+            events = uproot.open(tree_path).arrays()
         return events
 
     def get_taus(self):
         events = self.get_events()
-        taus_dict = {"e": events.tau_e, "pt": events.tau_pt, "eta": events.tau_eta, "phi": events.tau_phi,
-                     "gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
-                     "gen_phi": events.gen_tau_phi, "lepton_gen_match": events.lepton_gen_match,
-                     "deepTau_VSjet": events.deepTau_VSjet, "deepTau_VSe": events.deepTau_VSe,
-                     "passed_last_filter": events.tau_passedLastFilter, "vz": events.tau_vz}
+        taus_dict = {"e": events["tau_e"], "pt": events["tau_pt"], "eta": events["tau_eta"], "phi": events["tau_phi"],
+                     "gen_e": events["gen_tau_e"], "gen_pt": events["gen_tau_pt"], "gen_eta": events["gen_tau_eta"],
+                     "gen_phi": events["gen_tau_phi"], "lepton_gen_match": events["lepton_gen_match"],
+                     "deepTau_VSjet": events["deepTau_VSjet"], "deepTau_VSe": events["deepTau_VSe"],
+                     "passed_last_filter": events["tau_passedLastFilter"], "vz": events["tau_vz"]}
         if self.decay_modes:
-            taus_dict["gen_decay_mode"] = Dataset.compute_decay_mode(events.gen_tau_nChargedHadrons, events.gen_tau_nNeutralHadrons)
+            taus_dict["gen_decay_mode"] = Dataset.compute_decay_mode(events["gen_tau_nChargedHadrons"], events["gen_tau_nNeutralHadrons"])
         taus = ak.zip(taus_dict)
         index = ak.argsort(taus.pt, ascending=False)
         taus = taus[index]
@@ -98,8 +106,8 @@ class Dataset:
         tau_1, tau_2 = ak.unzip(ak.combinations(taus, 2, axis=1))
         # Necessary selection for old ntuples production (last filters to be applied offline)
         if apply_selection:
-            L1taus = ak.zip({"e": events.L1tau_e, "pt": events.L1tau_pt, "eta": events.L1tau_eta,
-                             "phi": events.L1tau_phi})
+            L1taus = ak.zip({"e": events["L1tau_e"], "pt": events["L1tau_pt"], "eta": events["L1tau_eta"],
+                             "phi": events["L1tau_phi"]})
             # apply L1seed correction in case Pt28 and Pt30 seeds are considered
             L1taus, taus = L1seed_correction(L1taus, taus)
             # match taus with L1 taus
@@ -110,13 +118,13 @@ class Dataset:
 
     def get_gen_taus(self):
         events = self.get_gen_events()
-        gen_taus_dict = {"gen_e": events.gen_tau_e, "gen_pt": events.gen_tau_pt, "gen_eta": events.gen_tau_eta,
-                           "gen_phi": events.gen_tau_phi,
-                           "lepton_gen_match": events.lepton_gen_match}
+        gen_taus_dict = {"gen_e": events["gen_tau_e"], "gen_pt": events["gen_tau_pt"], "gen_eta": events["gen_tau_eta"],
+                           "gen_phi": events["gen_tau_phi"],
+                           "lepton_gen_match": events["lepton_gen_match"]}
         if self.decay_modes:
-            gen_taus_dict["gen_decay_mode"] = Dataset.compute_decay_mode(events.gen_tau_nChargedHadrons, events.gen_tau_nNeutralHadrons)
+            gen_taus_dict["gen_decay_mode"] = Dataset.compute_decay_mode(events["gen_tau_nChargedHadrons"], events["gen_tau_nNeutralHadrons"])
         gen_taus = ak.zip(gen_taus_dict)
-        index = ak.argsort(gen_taus.gen_pt, ascending=False)
+        index = ak.argsort(gen_taus["gen_pt"], ascending=False)
         gen_taus = gen_taus[index]
         return gen_taus
 
@@ -127,7 +135,7 @@ class Dataset:
 
     def get_met(self):
         events = self.get_events()
-        MET_dict = {"e": events.MET_e, "pt": events.MET_pt, "eta": events.MET_eta, "phi": events.MET_phi}
+        MET_dict = {"e": events["MET_e"], "pt": events["MET_pt"], "eta": events["MET_eta"], "phi": events["MET_phi"]}
         METs = ak.zip(MET_dict)
         index = ak.argsort(METs.pt, ascending=False)
         METs = METs[index]
@@ -135,7 +143,7 @@ class Dataset:
 
     def get_gen_met(self):
         events = self.get_gen_events()
-        gen_met_dict = {"gen_pt": events.gen_met_calo_pt, "gen_phi": events.gen_met_calo_phi}
+        gen_met_dict = {"gen_pt": events["gen_met_calo_pt"], "gen_phi": events["gen_met_calo_phi"]}
         gen_met = ak.zip(gen_met_dict)
         return gen_met
 
@@ -164,7 +172,7 @@ class Dataset:
         else:
             sys.exit("Wrong dataset type. choose one of the following: EleTau, MuTau, TauMET, HighPtTau, DiTau")
         good_events = gen_events[ev_mask].evt
-        good_events = ak.to_numpy(good_events, False)
+        good_events = ak.to_numpy(good_events)
         print(good_events)
         return ev_mask, good_events
 

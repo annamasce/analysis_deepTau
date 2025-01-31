@@ -2,6 +2,7 @@ from common.dataset import Dataset
 from common.eff_rate import *
 from common.selection import DzMatchFilter
 from run_optimization import get_leading_pair
+from HLT_paths import rate_bm_paths
 import awkward as ak
 from scipy.optimize import minimize, minimize_scalar
 import numpy as np
@@ -9,6 +10,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import math
 import argparse
+import json
 
 
 def true_taus_selected(taus, Pt_thr):
@@ -41,26 +43,26 @@ def compute_rate(tau_1, tau_2, Nev_den, Pt_thr, a, L1rate, deep_thr):
     return Nev_num / Nev_den * L1rate
 
 
-def loss(rate):
+def loss(rate, rate_bm):
     k = math.log(2) / 0.1
-    if rate <= 46:
+    if rate <= rate_bm:
         return 0
-    if rate > 46.1:
+    if rate > (rate_bm + 0.1):
         return 1
-    return math.exp(k * (rate - 46)) - 1
+    return math.exp(k * (rate - rate_bm)) - 1
 
 
-def run_optimization(taus, taus_rates, Pt_thr, deep_thr, Nev_den, L1rate):
+def run_optimization(taus, taus_rates, rate_bm, Pt_thr, deep_thr, Nev_den, L1rate):
     taus_selected = true_taus_selected(taus, Pt_thr)
 
     def f(a):
         rate = compute_rate(taus_rates[0], taus_rates[1], Nev_den, Pt_thr, a, L1rate, deep_thr)
         eff_algo, _, _ = compute_eff_algo(taus_selected[0], taus_selected[1], a, Pt_thr, deep_thr)
         print(a, "\trate\t:", rate, "\teff\t:", eff_algo)
-        return - eff_algo + loss(rate)
+        return - eff_algo + loss(rate, rate_bm)
 
     # res = minimize(f, [0.7, 0.7], bounds=((0, 1), (0, 1)), method="L-BFGS-B", options={"eps": 0.001})
-    res = minimize(f, [0.9, 0.7], bounds=((0.05, 1), (0.05, 1)), method="L-BFGS-B", options={"eps": 0.001})
+    res = minimize(f, [0.9, 0.7], bounds=((0.05, 1), (0.05, 1)), method="L-BFGS-B", options={"eps": 0.01})
     # res = minimize(f, [0.7], bounds=[(0.125, 1)], method="L-BFGS-B", options={"eps": 0.001})
 
     print("Optimized parameters:", res.x)
@@ -68,7 +70,7 @@ def run_optimization(taus, taus_rates, Pt_thr, deep_thr, Nev_den, L1rate):
     return res.x
 
 
-def plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr, optim_x, label):
+def plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr, optim_x, label, json_file_path="algo_eff.json"):
     eff = np.zeros([3, len(pt_bins)])
     pt_arrays = np.zeros([3, len(pt_bins)])
     taus_selected = true_taus_selected(taus, Pt_thr)
@@ -112,6 +114,15 @@ def plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr, optim_x, label):
     ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
     ax.set_xlim(30, 1000)
     ax.set_ylim(0.86, 1)
+    eff_dict = {
+        "pt_bins": list(pt_bins),
+        "eff": list(eff[0, :]),
+        "err_low": list(eff[1, :]),
+        "err_up": list(eff[2, :])
+    }
+    print(json_file_path)
+    with open(json_file_path, "w") as file:
+        json.dump(eff_dict, file, indent=4)
 
 
 if __name__ == '__main__':
@@ -122,6 +133,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     tag = args.tag
+    plot_path = args.plotPath
+    rate_bm = rate_bm_paths["DiTau"]
 
     # deepTau eff dataset
     fileName = ["/Users/mascella/workspace/EPR-workspace/analysis_deepTau/data/220330/VBFHToTauTau_deepTau.root",
@@ -147,8 +160,8 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
 
     Pt_thr = 35
-    optim_x = run_optimization(taus, taus_rates, Pt_thr, deep_thr_lin1_lowThr, Nev_den, L1rate_bm)
-    plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr_lin1_lowThr, optim_x, tag)
+    optim_x = run_optimization(taus, taus_rates, rate_bm, Pt_thr, deep_thr_lin1_lowThr, Nev_den, L1rate_bm)
+    plot_algo_eff_singleTau(taus, pt_bins, ax, deep_thr_lin1_lowThr, optim_x, tag, json_file_path=plot_path+"/algo_eff_flatten_{}.json".format(tag))
     # plt.legend()
     # plt.savefig("algo_eff_flatten_{}.pdf".format(tag))
     plt.show()

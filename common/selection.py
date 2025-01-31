@@ -125,7 +125,8 @@ def deep_thr_const(tau, par, Pt_thr):
 
 
 def true_tau_selection(taus):
-    tau_mask = taus.lepton_gen_match == 5
+    tau_mask = (taus["lepton_gen_match"] == 5)
+    print(tau_mask)
     return tau_mask
 
 
@@ -231,7 +232,7 @@ def evt_base_selection(dataset):
     return ak.to_numpy(good_events, False)
 
 def good_evt_selection(events, good_events):
-    evt_ids = ak.to_numpy(events.evt, False)
+    evt_ids = ak.to_numpy(events["evt"])
     matches = np.isin(evt_ids, good_events)
     # matches = [True if ev in good_events else False for ev in evt_ids]
     return matches
